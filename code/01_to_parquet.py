@@ -7,6 +7,7 @@ Saidas em data/parquet:
 """
 import re
 import sys
+import os
 from pathlib import Path
 
 import geopandas as gpd
@@ -18,7 +19,8 @@ OUT = ROOT / "data" / "parquet"
 OUT.mkdir(parents=True, exist_ok=True)
 
 SRC26 = ROOT / "jobs_10194945_results_Speed_Profiles_-_AML.shapefile"
-SRC20 = Path("/Users/andresoareslopes/Documents/90_Arquivo/gulbenkian_resumo/dados/tomtom_1_copia")
+# pasta com o TomTom de janeiro de 2020 (fora do git); definir TOMTOM_2020_DIR ou usar data/raw/tomtom_2020
+SRC20 = Path(os.environ.get("TOMTOM_2020_DIR", ROOT / "data" / "raw" / "tomtom_2020"))
 
 
 def read_net(path: Path) -> gpd.GeoDataFrame:

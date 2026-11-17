@@ -41,7 +41,7 @@ Consequências:
 - Julho é mês de férias escolares: o trânsito está mais livre do que na média do ano, o que favorece o carro e penaliza o TP na comparação.
 - Não há ids de nós nem sentido de circulação explícito: a topologia do grafo tem de ser reconstruída pelos extremos das geometrias. Validar na fase 0.
 
-### TomTom Traffic Stats, janeiro 2020 (pasta de arquivo `90_Arquivo/gulbenkian_resumo/dados/tomtom_1_copia`)
+### TomTom Traffic Stats, janeiro 2020 (pasta de arquivo local, fora do repositório)
 - Mesma AML, mesmo produto (Area Analysis), mas **com perfil horário**: seis time sets de 1 hora (07-08, 08-09, 09-10, 17-18, 18-19, 19-20).
 - Período: 2020-01-07 a 2020-01-30, só **terça a quinta** (domingo, segunda, sexta e sábado excluídos), ou seja, mês escolar, pré-COVID.
 - Rede mais antiga (mapa `eur2020.03`): 385 187 segmentos, 31 239 km (a rede de 2026 tem 414 984 segmentos, 31 350 km).

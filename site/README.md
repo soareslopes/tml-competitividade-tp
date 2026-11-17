@@ -17,9 +17,8 @@ mas o mapa de base OpenStreetMap só carrega com internet.
 
 ## Publicar no GitHub Pages
 
-1. Copiar a pasta `site/` para o repositório (ou usar a pasta como raiz de publicação).
-2. Em Settings > Pages, escolher a branch e a pasta que contém `index.html`.
-3. O ficheiro `.nojekyll` já está incluído. O tamanho total ronda 12 MB (cerca de 4 MB comprimido).
+Automático: `.github/workflows/pages.yml` publica `site/` a cada push em `main` (Settings > Pages > Source: GitHub Actions).
+O ficheiro `.nojekyll` já está incluído. O tamanho total ronda 12 MB (cerca de 4 MB comprimido).
 
 ## Estrutura
 

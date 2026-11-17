@@ -540,6 +540,12 @@
       <li>Cor = classe de razão (azul: TP mais rápido ou equivalente; vermelho: muito mais lento). Espessura = viagens por hora.</li>
       <li>Clique num troço para selecionar as linhas que o servem; use <b>Área</b> para selecionar todos os troços numa zona do mapa; ou procure uma linha pelo nome.</li>
     </ul>
+    <h3>Fontes</h3>
+    <ul>
+      <li>Zonas, freguesias, população (Censos 2021) e GTFS: geoportal da TML (Transportes Metropolitanos de Lisboa).</li>
+      <li>Velocidades do carro: TomTom Traffic Stats (janeiro de 2020), associadas à rede viária do OpenStreetMap (&copy; contribuidores do OpenStreetMap, ODbL).</li>
+      <li>Projeto independente de investigação, sem afiliação oficial com a TML ou a TomTom.</li>
+    </ul>
     <h3>Limitações (prova de conceito)</h3>
     <ul>
       <li>Dados: TomTom de janeiro de 2020, GTFS de 2024 (dia útil de referência, 15/05/2024), OSM de 2026.</li>

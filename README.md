@@ -4,6 +4,8 @@ Prova de conceito para a TML (Transportes Metropolitanos de Lisboa): para cada z
 linha, compara o tempo de viagem em transporte público (TP) com o de carro, pela **razão** TP / carro
 e pela **diferença** TP menos carro (minutos).
 
+**Mapa interativo:** https://soareslopes.github.io/tml-competitividade-tp/
+
 Dados da prova de conceito: TomTom (janeiro de 2020), GTFS 2024 e OSM. Sem CP, TCB, fluvial,
 Metro Sul e Mobi Cascais. Ver `reports/` para as limitações.
 
@@ -26,3 +28,15 @@ Os scripts `code/NN_*.py` regeneram `parquet` e `processed` a partir de `raw`, p
 
 Python 3.13 com pandas, geopandas, pyarrow, duckdb, igraph, scipy, shapely, pyogrio, osmium,
 matplotlib e r5py (precisa de Java). Criar com `python3 -m venv .venv`.
+
+## Publicação
+
+O mapa (`site/`) é publicado no GitHub Pages por `.github/workflows/pages.yml` a cada alteração em `site/`
+na branch `main`. Os dados do mapa são regenerados com `code/50_export_site.py`.
+
+## Licença e fontes de dados
+
+Ainda não há licença definida para o código. Os dados pertencem às fontes originais: geoportal da TML
+(zonas, população, GTFS), TomTom Traffic Stats (velocidades de janeiro de 2020) e OpenStreetMap (ODbL).
+O repositório publica apenas resultados agregados (matriz zona a zona, troços de linha e figuras), não os
+dados brutos. Projeto de investigação, sem afiliação oficial com a TML ou a TomTom.
