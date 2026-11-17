@@ -1,0 +1,14 @@
+segmentos: 414984 | com tempo: 337994
+nos: 200636 | arestas: 414984
+arestas com inversa (B->A existe): 81.0%
+loops (u==v): 0
+fracao de arestas com tempo de fallback: 0.186
+componentes (weak): 31 | maior: 200532 nos (99.9%) | 2o: 10
+componentes (strong): 275 | maior: 132567 nos (66.1%) | 2o: 67732
+
+rotas de teste (tempo, distancia):
+  Praca do Comercio -> Oriente:  17.1 min,   9.1 km, vel media   32 km/h (snap 71 m, 37 m)
+  Cascais centro -> Lisboa Sete Rios:  27.3 min,  27.5 km, vel media   60 km/h (snap 35 m, 37 m)
+  Almada Cova da Piedade -> Lisboa Saldanha:  14.2 min,   7.4 km, vel media   31 km/h (snap 3594 m, 12 m)
+  Sintra -> Amadora:  28.2 min,  22.5 km, vel media   48 km/h (snap 29 m, 12 m)
+  Setubal -> Lisboa Entrecampos:  15.2 min,   7.4 km, vel media   29 km/h (snap 32996 m, 20 m)

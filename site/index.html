@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Competitividade do TP face ao carro</title>
+<meta name="description" content="Prova de conceito: razão e diferença de tempo entre transporte público e carro na Área Metropolitana de Lisboa, por zona e por linha.">
+<link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><strong>TP face ao carro</strong><span>Área Metropolitana de Lisboa · prova de conceito</span></div>
+  <div class="tabs" role="tablist" aria-label="Nível de análise">
+    <button role="tab" data-mode="zones" class="on" aria-selected="true">Zonas</button>
+    <button role="tab" data-mode="lines" aria-selected="false">Linhas</button>
+  </div>
+  <button id="helpBtn" class="ghost">Como ler</button>
+</header>
+
+<section class="filters" id="filters" aria-label="Filtros">
+  <label>Hora de partida
+    <select id="fSlot">
+      <option value="all">Média das 6 horas</option>
+      <option value="0">7h às 8h</option><option value="1" selected>8h às 9h</option><option value="2">9h às 10h</option>
+      <option value="3">17h às 18h</option><option value="4">18h às 19h</option><option value="5">19h às 20h</option>
+    </select>
+  </label>
+  <label>Velocidade do carro
+    <select id="fScen">
+      <option value="0">Média (TomTom)</option>
+      <option value="1">Congestionado (percentil lento)</option>
+      <option value="2">Fluido (percentil rápido)</option>
+    </select>
+  </label>
+  <div class="grp zonesOnly">
+    <label>Acesso e estacionamento do carro
+      <span class="rng"><input id="fPen" type="range" min="0" max="20" step="1" value="0"><output id="fPenV">0 min</output></span>
+    </label>
+    <label>Perspetiva
+      <select id="fRole"><option value="from">Viagens que saem da zona</option><option value="to">Viagens que chegam à zona</option></select>
+    </label>
+    <label>Mapa mostra
+      <select id="fMetric">
+        <option value="ratio">Razão TP / carro</option><option value="diff">Diferença TP - carro (min)</option>
+        <option value="reach">População alcançável por TP</option><option value="pop">População da zona</option>
+        <option value="grp">Grupo de prioridade (cenário base)</option>
+      </select>
+    </label>
+    <label>Concelho<select id="fMun"><option value="">Todos</option></select></label>
+    <label>População mínima da zona
+      <select id="fPop"><option value="0">Todas</option><option value="1000">1 000</option><option value="5000">5 000</option><option value="10000">10 000</option><option value="20000">20 000</option></select>
+    </label>
+  </div>
+  <div class="grp linesOnly" hidden>
+    <fieldset class="ops"><legend>Operadores</legend><span id="fOps"></span></fieldset>
+    <label>Frequência mínima do troço
+      <span class="rng"><input id="fFreq" type="range" min="0" max="12" step="1" value="0"><output id="fFreqV">0 viagens/h</output></span>
+    </label>
+    <label>Procurar linha
+      <input id="fLine" list="lineList" placeholder="ex.: 4701, 28E, Sintra" autocomplete="off"><datalist id="lineList"></datalist>
+    </label>
+  </div>
+  <button id="resetBtn" class="ghost" title="Repor todos os filtros e a seleção">Repor</button>
+</section>
+
+<main>
+  <div class="mapwrap">
+    <div id="map" aria-label="Mapa"></div>
+    <div class="tools" role="toolbar" aria-label="Ferramentas de seleção">
+      <button data-tool="click" class="on" title="Clique para selecionar. Shift+clique para adicionar">Clicar</button>
+      <button data-tool="box" title="Arraste um retângulo para selecionar uma área">Área</button>
+      <button id="clearBtn" title="Limpar a seleção">Limpar</button>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="busy" id="busy" hidden>A calcular...</div>
+  </div>
+  <aside id="panel" aria-live="polite"></aside>
+</main>
+
+<dialog id="help">
+  <form method="dialog"><button class="x" aria-label="Fechar">Fechar</button></form>
+  <div id="helpBody"></div>
+</dialog>
+
+<script src="lib/leaflet.js"></script>
+<script src="data/zones.js"></script>
+<script src="data/muns.js"></script>
+<script src="data/od.js"></script>
+<script src="data/lines.js"></script>
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

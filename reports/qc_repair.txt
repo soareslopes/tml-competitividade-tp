@@ -1,0 +1,9 @@
+sumidouros: 19 fontes: 19
+base: (0.6607, [132567, 67732, 10, 7])
+R=50: 11 pontes sumidouro->fonte -> (0.6609, [132600, 67808, 10, 9])
+R=150: 15 pontes sumidouro->fonte -> (0.6612, [132657, 67808, 10, 9])
+R=500: 17 pontes sumidouro->fonte -> (0.6612, [132657, 67808, 10, 9])
+  sumidouro isolado [-9.2173 39.0192] dist fonte mais proxima 426 m | {'Autoestrada do Oeste'}
+  sumidouro isolado [-9.2128 39.013 ] dist fonte mais proxima 358 m | {'Autoestrada do Oeste'}
+  sumidouro isolado [-9.1751 38.681 ] dist fonte mais proxima 1078 m | {'Ponte 25 de Abril'}
+  sumidouro isolado [-8.713  38.8207] dist fonte mais proxima 1857 m | {'Autoestrada Marateca-SantarÃ©m'}

@@ -1,0 +1,13 @@
+SCC 154: 132567 nos, lon medio -9.244, lat medio 38.790, lat min 38.675 max 39.063
+SCC 187: 67732 nos, lon medio -9.019, lat medio 38.606, lat min 38.415 max 38.846
+arestas c1->c2: 0  c2->c1: 0
+c1->c2:
+ Empty DataFrame
+Columns: [street, frc, length_m]
+Index: []
+c2->c1:
+ Empty DataFrame
+Columns: [street, frc, length_m]
+Index: []
+nos fora dos 2 maiores SCC: 337
+arestas tocando SCCs pequenos: 383 km: 126

@@ -1,0 +1,42 @@
+linhas segmento x hora apos filtros: 54173 de 59287
+
+linhas com >= 3 km: 914 (por operador: {'carris': 111, 'cm': 791, 'fertagus': 4, 'metro': 8})
+
+Mais competitivas (menor ratio), autocarros:
+feed route_id                                                       route_name    km  ratio  trips_h
+  cm   2017_0                   2017 Guerreiros - Loures Loures (Centro Saúde)  4.64   0.65      1.0
+  cm   4701_2              4701 Lisboa (Oriente) - Vale da Amoreira | Expresso 11.68   0.70      4.5
+  cm   1107_0                  1107 Algés (Estação) - Queluz Baixo via Queijas 11.42   0.77      2.0
+  cm   2741_0 2741 Ericeira (Terminal) - Lisboa (C. Grande) via Freixeira e A8 33.95   0.77      1.0
+  cm   4514_3  4514 Canha - Montijo (Terminal Rodoviário) via Pegões e Afonsos 22.29   0.86      1.0
+  cm   3527_1                      3527 Monte da Caparica (FCT) - Almada Forum  3.87   0.88      1.0
+  cm   4546_0                                   4546 Biscainho - Setúbal (ITS) 11.04   0.88      1.0
+  cm   2776_0                             2776 Guerreiros - Lisboa (C. Grande) 21.01   0.89      1.7
+
+Menos competitivas (maior ratio):
+feed route_id                                 route_name   km  ratio  trips_h
+  cm   4303_0                    4303 Palmela | Circular 3.10   3.28     1.00
+  cm   4461_0   4461 Escolas Azeitão 1º Ciclo | Circular 6.89   2.86     1.00
+  cm   4462_0 4462 Escolas Azeitão 2 3º Ciclo | Circular 8.07   2.82     1.00
+  cm   3037_0                  3037 Quintinha | Circular 6.60   2.78     1.00
+  cm   3503_0       3503 Almada Forum - Vale de Milhaços 7.48   2.73     1.00
+  cm   3028_0                               3028 Lazarim 4.90   2.68     1.83
+  cm   3110_0       3110 Fogueteiro (Estação) - Redondos 8.68   2.54     1.20
+  cm   4320_0                4320 Pinhal Novo | Circular 5.93   2.50     1.00
+
+Metro e Fertagus:
+    feed              route_name    km  ratio  ratio_min  ratio_max
+fertagus  Setúbal - Roma-Areeiro 50.03   0.45       0.41       0.48
+fertagus  Roma-Areeiro - Setúbal 51.30   0.45       0.38       0.52
+fertagus    Coina - Roma-Areeiro 27.79   0.43       0.36       0.48
+fertagus    Roma-Areeiro - Coina 32.70   0.46       0.36       0.56
+   metro      Amarela - ODIVELAS  5.37   0.42       0.37       0.51
+   metro          Amarela - RATO  7.53   0.42       0.38       0.53
+   metro     Azul - STª APOLÓNIA 12.75   0.50       0.47       0.58
+   metro        Azul - REBOLEIRA 12.75   0.54       0.44       0.66
+   metro   Verde - CAIS DO SODRE  8.03   0.53       0.49       0.65
+   metro       Verde - TELHEIRAS  8.03   0.39       0.33       0.49
+   metro    Vermelha - AEROPORTO  9.85   0.48       0.41       0.58
+   metro Vermelha - S. SEBASTIÃO  9.85   0.39       0.34       0.47
+
+Variacao horaria do ratio por linha (max - min), quantis: [0.28, 0.63, 1.17]

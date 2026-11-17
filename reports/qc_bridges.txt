@@ -1,0 +1,4 @@
+Ponte Vasco da Gama: 144 segmentos | para norte 72 | para sul 67 | km 31.3
+Ponte 25 de Abril: 27 segmentos | para norte 19 | para sul 8 | km 4.0
+de Lisboa alcanca Almada: True | de Almada alcanca Lisboa: False
+nos alcancaveis a partir de Lisboa: 200419 | a partir de Almada: 67801

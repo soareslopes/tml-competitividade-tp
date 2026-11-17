@@ -1,0 +1,28 @@
+zonas 383 | snap carro mediano 60 m, max 2919 m
+07-08 | 26s
+08-09 | 51s
+09-10 | 76s
+17-18 | 101s
+18-19 | 126s
+19-20 | 151s
+
+pares (origem != destino, por hora): 146306 | TP alcancavel: 59.6%
+ratio TP/carro nos pares alcancaveis com carro >= 5 min, por hora (p10, mediana, p90):
+        0.1   0.5   0.9
+slot                   
+07-08  2.68  3.89  5.85
+08-09  2.30  3.53  5.43
+09-10  2.60  3.93  5.97
+17-18  2.30  3.46  5.34
+18-19  2.15  3.27  5.12
+19-20  2.50  3.76  5.74
+distribuicao por classe (hora 08-09, % de pares alcancaveis):
+ratio
+<1       0.000
+1-1.5    0.007
+1.5-2    0.041
+2-3      0.259
+3-4      0.336
+>4       0.357
+diferenca mediana (min): {'07-08': 78.4, '08-09': 75.5, '09-10': 81.2, '17-18': 75.8, '18-19': 72.0, '19-20': 74.7}
+total 151s

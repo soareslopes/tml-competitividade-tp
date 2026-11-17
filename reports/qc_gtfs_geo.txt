@@ -1,0 +1,102 @@
+ficheiros GTFS:
+  agency.txt                    0.00 MB
+  calendar_dates.txt            0.06 MB
+  feed_info.txt                 0.00 MB
+  plans.txt                     0.00 MB
+  routes.txt                    0.09 MB
+  shapes.txt                   92.45 MB
+  stop_times.txt              794.45 MB
+  stops.txt                     3.64 MB
+  trips.txt                    50.35 MB
+
+=== feed_info
+default_lang  feed_contact_email            feed_contact_url  feed_end_date feed_lang                        feed_publisher_name       feed_publisher_url  feed_start_date     feed_version
+          pt go@tmlmobilidade.pt https://go.tmlmobilidade.pt       20270630        pt TML - Transportes Metropolitanos de Lisboa https://tmlmobilidade.pt         20261113 20261113-0400-04
+
+=== agency
+                   agency_email                           agency_fare_url agency_id agency_lang          agency_name  agency_phone agency_timezone                     agency_url  cemv_support  agency_code
+contacto@carrismetropolitana.pt https://carrismetropolitana.pt/tarifarios     A2L1N          pt Carris Metropolitana +351210410400   Europe/Lisbon https://carrismetropolitana.pt             0           44
+contacto@carrismetropolitana.pt https://carrismetropolitana.pt/tarifarios     BNA17          pt Carris Metropolitana +351210410400   Europe/Lisbon https://carrismetropolitana.pt             0           42
+contacto@carrismetropolitana.pt https://carrismetropolitana.pt/tarifarios     LA77N          pt Carris Metropolitana +351210410400   Europe/Lisbon https://carrismetropolitana.pt             0           41
+contacto@carrismetropolitana.pt https://carrismetropolitana.pt/tarifarios     YA15B          pt Carris Metropolitana +351210410400   Europe/Lisbon https://carrismetropolitana.pt             0           43
+
+=== calendar_dates: intervalo e n
+    dmin     dmax    n
+20260101 20270630 2001
+
+=== contagens
+ routes  trips  stops  stop_times
+    946 306978  12798     9955081
+
+=== colunas stop_times
+arrival_time  continuous_drop_off  continuous_pickup departure_time  drop_off_type  pickup_type  shape_dist_traveled stop_headsign  stop_id  stop_sequence  timepoint                          trip_id
+    07:10:00                    0                  0       07:10:00              0            0                0.000          None   310041              1          1 [FBZQZ][A2L1N]4001_0_3|1000|0710
+    07:20:00                    0                  0       07:20:00              0            0                3.848          None   310028             10          1 [FBZQZ][A2L1N]4001_0_3|1000|0710
+    07:20:00                    0                  0       07:20:00              0            0                4.059          None   310002             11          1 [FBZQZ][A2L1N]4001_0_3|1000|0710
+
+=== colunas trips
+ bikes_allowed                              block_id  cars_allowed  direction_id      pattern_id      route_id         service_id               shape_id        trip_headsign                          trip_id  trip_short_name  wheelchair_accessible
+             0 [A2L1N]20261110-64010106-121600234560             0             0 [A2L1N]4001_0_3 [A2L1N]4001_0 [FBZQZ][A2L1N]1000 [FBZQZ][A2L1N]4001_0_3 Alcochete | Circular [FBZQZ][A2L1N]4001_0_3|1000|0710             <NA>                      0
+             0 [A2L1N]20261110-64010106-121600234560             0             0 [A2L1N]4001_0_3 [A2L1N]4001_0 [FBZQZ][A2L1N]1000 [FBZQZ][A2L1N]4001_0_3 Alcochete | Circular [FBZQZ][A2L1N]4001_0_3|1000|0750             <NA>                      0
+             0 [A2L1N]20261110-64010106-121600234560             0             0 [A2L1N]4001_0_3 [A2L1N]4001_0 [FBZQZ][A2L1N]1000 [FBZQZ][A2L1N]4001_0_3 Alcochete | Circular [FBZQZ][A2L1N]4001_0_3|1000|0830             <NA>                      0
+
+=== colunas routes
+agency_id  cemv_support  continuous_drop_off  continuous_pickup route_color route_desc      route_id                                                                          route_long_name  route_short_name route_text_color  route_type route_url
+    LA77N             0                    1                  1      C61D23       None [LA77N]1001_0                                         Alfragide (Estr Seminario) - Reboleira (Estação)              1001           FFFFFF           3      None
+    LA77N             0                    1                  1      C61D23       None [LA77N]1002_0 Reboleira (Estação) | Circular via Alfragide (Centro comercial ) e Amadora (Estação Sul)              1002           FFFFFF           3      None
+    LA77N             0                    1                  1      C61D23       None [LA77N]1003_0                                           Amadora (Estação Norte) - Amadora Este (Metro)              1003           FFFFFF           3      None
+    LA77N             0                    1                  1      C61D23       None [LA77N]1004_0                              Amadora (Estação Norte) via Moinhos da Funcheira | Circular              1004           FFFFFF           3      None
+    LA77N             0                    1                  1      C61D23       None [LA77N]1005_0                                                           Amadora (Estação Norte) - UBBO              1005           FFFFFF           3      None
+
+=== route_type
+ route_type   n
+          3 946
+
+=== viagens por dia (primeiros 10 dias com servico)
+    date  services
+20260101         3
+20260102         3
+20260103         3
+20260104         3
+20260105         4
+20260106         4
+20260107         4
+20260108         4
+20260109         4
+20260110         4
+
+=== camadas do geoportal
+
+gtfs_shapes.geojson: 2387 feicoes, crs=EPSG:4326, geom=<ArrowStringArray>
+['LineString']
+Length: 1, dtype: str
+  colunas: ['id', 'shape_id']
+
+gtfs_stops.geojson: 12702 feicoes, crs=EPSG:4326, geom=<ArrowStringArray>
+['Point']
+Length: 1, dtype: str
+  colunas: ['stop_id', 'stop_name', 'stop_name_new', 'stop_short_name', 'stop_lat', 'stop_lon', 'operational_status', 'areas', 'region_id', 'region_name', 'district_id', 'district_name', 'municipality_id', 'municipality_name']
+
+informacao_base_grelha_hexag.geojson: 14624 feicoes, crs=EPSG:4326, geom=<ArrowStringArray>
+['MultiPolygon']
+Length: 1, dtype: str
+  colunas: ['fid', 'coluna', 'linha', 'hexag', 'zona']
+  zona unica: 383 | exemplo: [['146_172', 309.0], ['146_174', 309.0], ['146_176', 309.0]]
+
+informacao_base_limite_concelho_aml.geojson: 18 feicoes, crs=EPSG:4326, geom=<ArrowStringArray>
+['MultiPolygon']
+Length: 1, dtype: str
+  colunas: ['fid', 'dico', 'municipio', 'distrito', 'n_freguesi', 'nutsiii', 'nutsii', 'nutsi', 'area_ha']
+ fid dico municipio distrito  n_freguesi       nutsiii        nutsii      nutsi      area_ha
+   1 1105   Cascais   Lisboa         4.0 Grande Lisboa Grande Lisboa Continente  9737.252856
+   2 1106    Lisboa   Lisboa        24.0 Grande Lisboa Grande Lisboa Continente 10003.483551
+   3 1107    Loures   Lisboa        10.0 Grande Lisboa Grande Lisboa Continente 16720.767472
+
+informacao_base_limites_freguesia_aml.geojson: 118 feicoes, crs=EPSG:4326, geom=<ArrowStringArray>
+['MultiPolygon']
+Length: 1, dtype: str
+  colunas: ['fid', 'objectid', 'dicofre', 'freguesia', 'municipio', 'distrito', 'dt21', 'dtmn21', 'dtmnfr21', 'n_individu', 'n_indivi_1', 'n_indivi_2', 'n_indivi_3', 'n_indivi_4']
+ fid  objectid dicofre                                   freguesia municipio distrito dt21 dtmn21 dtmnfr21  n_individu  n_indivi_1  n_indivi_2  n_indivi_3  n_indivi_4  n_indivi_5  n_indivi_6  n_edificio  n_edific_1  n_edific_2  n_edific_3  n_edific_4  n_edific_5  n_edific_6  n_edific_7  n_edific_8  n_edific_9  n_edific10  n_edific11  n_alojamen  n_alojam_1  n_alojam_2  n_alojam_3  n_rhabitua  n_rhabit_1  n_rhabit_2  n_rhabit_3  n_agregado  n_adp_1_ou  n_adp_3_ou  n_nucleos_  n_nucleo_1
+   1    1672.0  110501                                 Alcabideche   CASCAIS   LISBOA   11   1105   110501     44165.0     21051.0     23114.0      6687.0      5235.0     23299.0      8944.0     10824.0      9326.0      1474.0     10732.0      8754.0      2070.0       313.0      4300.0      3734.0      2125.0       352.0      3134.0     20190.0     20158.0     16605.0      3545.0      5148.0      9135.0     10350.0      4810.0     16615.0      9036.0      7579.0     12886.0      6910.0
+   2    1673.0  110506                        São Domingos de Rana   CASCAIS   LISBOA   11   1105   110506     59238.0     27910.0     31328.0      9429.0      6712.0     31748.0     11349.0     12143.0     10072.0      2057.0     12044.0      9084.0      3059.0       175.0      4434.0      5079.0      2046.0       409.0      4714.0     26671.0     26657.0     22766.0      3891.0      7477.0     13572.0     16246.0      4770.0     22766.0     12115.0     10651.0     18014.0      9828.0
+   3    1674.0  110507 União das freguesias de Carcavelos e Parede   CASCAIS   LISBOA   11   1105   110507     46529.0     21189.0     25340.0      6193.0      4914.0     23874.0     11548.0      6797.0      4532.0      2232.0      6625.0      3368.0      3429.0       463.0      3279.0      2077.0       785.0       193.0      4133.0     25081.0     25048.0     19975.0      5073.0      5432.0     10811.0     13405.0      5019.0     19976.0     12767.0      7209.0     13452.0      6666.0

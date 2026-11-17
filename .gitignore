@@ -1,0 +1,16 @@
+# ambiente e lixo local
+.venv/
+__pycache__/
+.DS_Store
+~$*
+*.pyc
+
+# dados pesados ou com licenca de terceiros (TomTom, GTFS, OSM, geoportal, derivados)
+/data/
+jobs_*/
+jobs_*.shapefile
+jobs_*.zip
+jobs_*.shapefile.zip
+
+# apresentacoes binarias (gerar com code/40_deck.js)
+*.pptx

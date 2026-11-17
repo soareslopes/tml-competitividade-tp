@@ -1,0 +1,43 @@
+nos 173439 | arestas 373925 | maior SCC: 97.8% dos nos
+
+Tempo de carro (min), cenario medio, por hora:
+slot                                 07-08  08-09  09-10  17-18  18-19  19-20
+par                                                                          
+Praca do Comercio > Oriente           15.2   17.8   18.0   21.6   21.5   18.2
+Cascais > Sete Rios                   31.3   40.6   32.7   30.2   30.8   28.3
+Almada (Cova da Piedade) > Saldanha   20.8   24.1   22.7   18.1   19.0   16.6
+Saldanha > Almada (Cova da Piedade)   17.3   20.1   19.6   28.9   33.4   27.7
+Sintra > Amadora                      27.0   31.8   28.5   28.8   29.8   25.8
+Setubal > Entrecampos                 39.3   46.8   44.2   43.9   45.2   41.1
+Entrecampos > Setubal                 36.4   39.8   39.8   47.0   49.0   43.3
+Loures > Cais do Sodre                31.0   37.7   35.7   32.2   33.6   28.3
+Seixal > Baixa-Chiado                 40.3   42.1   38.5   32.2   30.7   28.1
+Odivelas > Campo Grande               13.6   17.3   14.8   14.7   14.6   13.1
+
+Km e snap (m):
+                                par   km  snap_o  snap_d
+        Praca do Comercio > Oriente  9.0     111      76
+                Cascais > Sete Rios 28.2      40       9
+Almada (Cova da Piedade) > Saldanha 10.3      18      13
+Saldanha > Almada (Cova da Piedade) 12.0      13      18
+                   Sintra > Amadora 25.3      27      15
+              Setubal > Entrecampos 54.7      14      19
+              Entrecampos > Setubal 52.1      19      14
+             Loures > Cais do Sodre 24.0      13      11
+              Seixal > Baixa-Chiado 23.5      59      37
+            Odivelas > Campo Grande  5.2       7      52
+
+Cenarios (08-09): fluido / medio / congestionado (min)
+                                par  free  avg  cong
+        Praca do Comercio > Oriente  10.2 17.8  24.2
+                Cascais > Sete Rios  23.2 40.6  52.5
+Almada (Cova da Piedade) > Saldanha  11.4 24.1  31.5
+Saldanha > Almada (Cova da Piedade)  12.1 20.1  26.6
+                   Sintra > Amadora  19.7 31.8  38.3
+              Setubal > Entrecampos  32.6 46.8  59.8
+              Entrecampos > Setubal  29.3 39.8  48.4
+             Loures > Cais do Sodre  21.5 37.7  53.2
+              Seixal > Baixa-Chiado  22.1 42.1  56.9
+            Odivelas > Campo Grande   8.4 17.3  25.2
+
+matriz freguesias (118, 118) em 2.5s | inf: 0 | mediana 35 min | max 88 min
