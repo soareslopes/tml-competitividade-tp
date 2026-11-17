@@ -15,8 +15,8 @@
 
   const S = {
     mode: "zones", slot: 1, scen: 0, pen: 0, role: "from", metric: "ratio", mun: "", popMin: 0, hidden: new Set(),
-    selZ: new Set(), hiZ: new Set(), scMode: "main", tool: "click",
-    feeds: new Set([0, 1, 2, 3]), minTrips: 0, sel: null, lscMode: "cor", sortKey: null, sortDir: -1,
+    selZ: new Set(), hiZ: new Set(), zsc: null, tool: "click",
+    feeds: new Set([0, 1, 2, 3]), minTrips: 0, sel: null, lscMode: "route", sortKey: null, sortDir: -1,
   };
   const slotsList = () => (S.slot === "all" ? [0, 1, 2, 3, 4, 5] : [S.slot]);
   const slotIdx = () => (S.slot === "all" ? -1 : S.slot);
@@ -147,14 +147,17 @@
 
   // ================================================================== linhas: vista
   let LV = null;
-  function computeLines() {
+  function computeLines() { LV = buildView(S.feeds, S.minTrips); }
+  let ZV = null, zvKey = "";
+  function zView() { const k = slotIdx() + "|" + S.scen; if (k !== zvKey) { ZV = buildView(new Set([0, 1, 2, 3]), 0); zvKey = k; } return ZV; }
+  function buildView(feeds, minTrips) {
     const v = D.entryVals(slotIdx(), S.scen), E = D.E, mask = new Uint8Array(E);
-    for (let e = 0; e < E; e++) mask[e] = v.t[e] > 0 && S.feeds.has(D.routes[D.eRi[e]].f) && v.t[e] >= S.minTrips ? 1 : 0;
+    for (let e = 0; e < E; e++) mask[e] = v.t[e] > 0 && feeds.has(D.routes[D.eRi[e]].f) && v.t[e] >= minTrips ? 1 : 0;
     const C = D.C, cT = new Float32Array(C), cA = new Float64Array(C), cB = new Float64Array(C), cE = new Uint8Array(C);
     for (let e = 0; e < E; e++) if (mask[e]) { const c = D.eCi[e]; cT[c] += v.t[e]; cA[c] += v.t[e] * v.tp[e]; cB[c] += v.t[e] * v.car[e]; cE[c] = 1; }
     const cR = new Float32Array(C), cD = new Float32Array(C);
     for (let c = 0; c < C; c++) if (cE[c]) { cR[c] = cA[c] / cB[c]; cD[c] = (cA[c] - cB[c]) / cT[c] / 60; }
-    LV = { v, mask, cT, cR, cD, cE };
+    return { v, mask, cT, cR, cD, cE };
   }
   function selEntries() {
     const s = S.sel; if (!s) return null;
@@ -194,6 +197,54 @@
     order.sort((a, b) => (hi[a] - hi[b]) || (D.cls(LV.cR[a]) - D.cls(LV.cR[b])));
     linesLayer.st = { col, wid, alpha, hi, hiAny, order };
     linesLayer.redraw();
+  }
+  function groupByRoute(es, v) {
+    const g = new Map();
+    for (const e of es) {
+      const r = D.eRi[e]; let o = g.get(r); if (!o) { o = { a: 0, b: 0, tk: 0, km: 0, d: 0, t: 0 }; g.set(r, o); }
+      const w = v.t[e]; o.a += w * v.tp[e]; o.b += w * v.car[e]; o.t += w; o.tk += w * D.eKmKm[e]; o.km += D.eKmKm[e]; o.d += (v.tp[e] - v.car[e]) / 60;
+    }
+    return g;
+  }
+  // corredores que atravessam uma zona (vertices e pontos medios dentro do poligono); calculado so para a zona escolhida
+  const zPoly = T.zones.features.map(f => {
+    const g = f.geometry, polys = g.type === "Polygon" ? [g.coordinates] : g.coordinates, bb = [1e9, 1e9, -1e9, -1e9];
+    for (const rings of polys) for (const [x, y] of rings[0]) { bb[0] = Math.min(bb[0], x); bb[1] = Math.min(bb[1], y); bb[2] = Math.max(bb[2], x); bb[3] = Math.max(bb[3], y); }
+    return { polys, bb };
+  });
+  function pip(x, y, rings) {
+    let inside = false;
+    for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+  const zcCache = new Map();
+  function zoneCors(zi) {
+    let s = zcCache.get(zi); if (s) return s;
+    s = new Set(); const z = zPoly[zi], b = z.bb;
+    const inZ = (x, y) => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && z.polys.some(rings => pip(x, y, rings));
+    for (let c = 0; c < D.C; c++) {
+      const cb = D.corBounds[c]; if (cb[2] < b[0] || cb[0] > b[2] || cb[3] < b[1] || cb[1] > b[3]) continue;
+      const g = D.corGeom[c].g;
+      for (let k = 0; k < g.length; k++) {
+        if (inZ(g[k][0], g[k][1]) || (k && inZ((g[k][0] + g[k - 1][0]) / 2, (g[k][1] + g[k - 1][1]) / 2))) { s.add(c); break; }
+      }
+    }
+    zcCache.set(zi, s); return s;
+  }
+  // linhas que servem as zonas selecionadas: observacao = troços da linha dentro das zonas (hora e cenario atuais)
+  function zoneLines() {
+    const V = zView(), cors = new Set();
+    for (const z of S.selZ) for (const c of zoneCors(z)) cors.add(c);
+    const es = []; for (const c of cors) for (const e of D.entByCor[c]) if (V.mask[e]) es.push(e);
+    const loc = groupByRoute(es, V.v), out = [];
+    for (const [r, o] of loc) {
+      const wh = groupByRoute(D.entByRoute[r].filter(e => V.mask[e]), V.v).get(r);
+      out.push({ r, ratio: o.a / o.b, diff: o.d, trips: o.tk / o.km, km: o.km, whole: wh ? wh.a / wh.b : NaN });
+    }
+    return out;
   }
   function routesAt(c) { return [...new Set(D.entByCor[c].filter(e => LV.mask[e]).map(e => D.eRi[e]))]; }
   const rLabel = r => `${D.feedNames[D.routes[r].f]} · ${D.routes[r].n}`;
@@ -310,10 +361,12 @@
     $("#selTitle").textContent = nSel ? `${nSel} zona(s) selecionada(s) · ${int(pop)} hab.` : (S.mun || S.popMin ? `${focal.length} zonas filtradas · ${int(pop)} hab.` : `Toda a AML · ${int(pop)} hab.`);
     $("#kpis").innerHTML = kpi(num(P.ratio), "razão mediana" + (R.ratio === R.ratio ? ` (AML ${num(R.ratio)})` : "")) + kpi(num(P.diff, 0) + " min", `diferença mediana (AML ${num(R.diff, 0)})`) +
       kpi(pc(P.reach), "da população alcançável por TP em 180 min") + kpi(pc(P.shares[0] + P.shares[1] + P.shares[2]), "das viagens alcançáveis com razão < 2");
-    // dispersao
-    const sub = $("#scSub"), mode = S.scMode;
-    seg([["main", "Zonas"], ["other", role === "from" ? "Destinos da seleção" : "Origens da seleção"]], mode, k => { S.scMode = k; updateZonesPanel(); }, "#scSeg");
-    let pts;
+    // dispersao: sem selecao = uma zona por ponto; com selecao = observacoes da selecao (linhas que a servem, destinos)
+    if (!nSel) S.zsc = null;
+    const mode = nSel ? S.zsc || "lines" : "main", sub = $("#scSub");
+    seg(nSel ? [["lines", "Linhas da zona"], ["other", role === "from" ? "Destinos" : "Origens"], ["main", "Todas as zonas"]] : [["main", "Todas as zonas"]], mode, k => { S.zsc = k; updateZonesPanel(); }, "#scSeg");
+    let pts, lineRows = null;
+    const cfg = { xlab: "Razão TP / carro", ylab: "Diferença TP - carro (min)", rmin: 2.5, rmax: 17, vmax: 60000 };
     if (mode === "main") {
       sub.innerHTML = `Cada ponto é uma zona (${role === "from" ? "viagens que saem dela" : "viagens que chegam a ela"}). <b>Área = população</b>: quanto maior o círculo, mais gente sofre aquela condição. Arraste para selecionar, shift para somar.`;
       pts = [];
@@ -321,20 +374,20 @@
         if (!passZ(i) || !(ZM.ratio[i] === ZM.ratio[i])) continue;
         pts.push({ id: i, x: ZM.ratio[i], y: ZM.diff[i], v: zones[i].pop, c: D.CLS_COLORS[D.cls(ZM.ratio[i])], sel: S.selZ.has(i), tip: `<b>Zona ${zones[i].id} · ${esc(zones[i].mun)}</b><br>${int(zones[i].pop)} hab.<br>Razão ${num(ZM.ratio[i])} · dif. ${num(ZM.diff[i], 0)} min` });
       }
-    } else {
-      sub.innerHTML = `Cada ponto é uma zona ${role === "from" ? "de destino" : "de origem"} vista a partir da ${nSel ? "seleção" : "área filtrada"} (tempos médios ponderados pela população). Arraste para destacar no mapa.`;
+      cfg.onSelect = (ids, add) => { const s = add ? new Set(S.selZ) : new Set(); ids.forEach(i => s.add(i)); S.selZ = s; S.hiZ.clear(); if (s.size) S.zsc = "main"; update({ map: true }); };
+    } else if (mode === "other") {
+      sub.innerHTML = `Cada ponto é uma zona ${role === "from" ? "de destino" : "de origem"} das viagens da seleção (tempos médios ponderados pela população). Arraste para destacar no mapa.`;
       const oe = D.otherEnd(focal, slotsList(), S.scen, S.pen, role);
       pts = oe.filter(p => passZ(p.o)).map(p => ({ id: p.o, x: p.ratio, y: p.diff, v: zones[p.o].pop, c: D.CLS_COLORS[D.cls(p.ratio)], sel: S.hiZ.has(p.o), tip: `<b>Zona ${zones[p.o].id} · ${esc(zones[p.o].mun)}</b><br>TP ${num(p.tp, 0)} min · carro ${num(p.car, 0)} min<br>Razão ${num(p.ratio)} · dif. ${num(p.diff, 0)} min` }));
+      cfg.onSelect = (ids, add) => { const s = add ? new Set(S.hiZ) : new Set(); ids.forEach(i => s.add(i)); S.hiZ = s; update({ map: true }); };
+    } else {
+      lineRows = zoneLines();
+      sub.innerHTML = `Cada ponto é uma <b>linha que serve ${nSel > 1 ? "as zonas selecionadas" : "a zona selecionada"}</b>, como a vivem os moradores (hora e carro dos filtros). Mede só os troços da linha dentro da zona; a linha inteira aparece no balão. <b>Área = viagens por hora</b>.`;
+      pts = lineRows.map(o => ({ id: o.r, x: o.ratio, y: o.diff, v: o.trips, c: D.CLS_COLORS[D.cls(o.ratio)], tip: `<b>${esc(D.routes[o.r].n)}</b><br>${esc(D.feedNames[D.routes[o.r].f])}<br>Na zona: razão ${num(o.ratio, 2)} · dif. ${num(o.diff, 0)} min · ${num(o.trips, 1)} viag./h<br>Linha inteira: razão ${num(o.whole, 2)}` }));
+      Object.assign(cfg, { ylab: "Diferença acumulada nos troços da zona (min)", rmin: 3, rmax: 14, vmax: 12, empty: "Nenhuma linha com serviço nesta zona, hora e filtros." });
     }
-    scat.set(pts, {
-      xlab: "Razão TP / carro", ylab: "Diferença TP - carro (min)", rmin: 2.5, rmax: 17, vmax: 60000,
-      onSelect: (ids, add) => {
-        if (mode === "main") { const s = add ? new Set(S.selZ) : new Set(); ids.forEach(i => s.add(i)); S.selZ = s; S.hiZ.clear(); }
-        else { const s = add ? new Set(S.hiZ) : new Set(); ids.forEach(i => s.add(i)); S.hiZ = s; }
-        update({ map: true });
-      },
-    });
-    $("#sizeLeg").innerHTML = sizeLegend("Tamanho = população", [2000, 10000, 40000], scat, v => int(v));
+    scat.set(pts, cfg);
+    $("#sizeLeg").innerHTML = mode === "lines" ? sizeLegend("Tamanho = viagens/h", [1, 4, 12], scat, v => num(v, 0)) : sizeLegend("Tamanho = população", [2000, 10000, 40000], scat, v => int(v));
     // barras
     $("#barSub").textContent = "Parte das viagens alcançáveis em cada classe (ponderada por população de origem e destino).";
     C.bars($("#barEl"), P.shares, R.shares);
@@ -344,6 +397,16 @@
     C.profile($("#profEl"), series);
     $("#profLeg").innerHTML = `<span><i class="dot" style="background:${css("--accent")}"></i>${nSel ? "Seleção" : filtered ? "Área filtrada" : "AML"}</span>${filtered ? `<span style="margin-left:12px"><i class="dot" style="background:${css("--ink2")}"></i>AML</span>` : ""}`;
     // tabela
+    if (mode === "lines") {
+      $("#tblTitle").textContent = "Linhas que servem a zona";
+      $("#tblSub").textContent = "Razão e viagens/h medidas nos troços dentro da zona. Clique numa linha para a ver no modo Linhas; clique no cabeçalho para ordenar.";
+      const lrows = lineRows.map(o => ({ r: o.r, name: D.routes[o.r].n, op: D.feedNames[D.routes[o.r].f], km: o.km, ratio: o.ratio, trips: o.trips, whole: o.whole }));
+      renderTable(lrows, [["name", "Linha"], ["op", "Operador"], ["km", "km na zona"], ["ratio", "Razão"], ["trips", "Viag./h"]], "ratio",
+        { km: v => num(v, 1), ratio: v => num(v, 2), trips: v => num(v, 1) },
+        r => { S.sel = { kind: "routes", routes: new Set([r.r]) }; setMode("lines"); fitRoute(r.r); }, 200);
+      panel.rows = lrows;
+      return;
+    }
     $("#tblTitle").textContent = nSel ? "Zonas selecionadas" : "Zonas a priorizar";
     $("#tblSub").textContent = "Ordenado por habitantes × diferença de tempo (quem mais perde). Clique numa linha para selecionar a zona; clique no cabeçalho para ordenar.";
     const rows = focal.filter(i => ZM.ratio[i] === ZM.ratio[i]).map(i => ({ i, name: `Zona ${zones[i].id} · ${zones[i].mun}`, pop: zones[i].pop, ratio: ZM.ratio[i], diff: ZM.diff[i], reach: ZM.reach[i], pd: zones[i].pop * ZM.diff[i] }));
@@ -359,43 +422,49 @@
     $("#selTitle").textContent = es && !es.length ? "Sem serviço nesta hora (mude a hora ou os filtros)" : es ? `${nr} linha(s) · ${A.cors} troços na seleção` : `Toda a rede filtrada · ${nr} linhas, ${A.cors} troços`;
     $("#kpis").innerHTML = kpi(num(A.ratio, 2), "razão agregada" + (es ? ` (rede ${num(Rf.ratio, 2)})` : "")) + kpi(num(A.diff) + " min", `diferença média por troço (rede ${num(Rf.diff)})`) +
       kpi(num(A.trips, 1), "viagens/h (média por km de linha)") + kpi(num(A.km, 0) + " km", "extensão de troços (soma por linha)");
-    const sub = $("#scSub");
-    seg([["cor", "Troços"], ["route", "Linhas"]], S.lscMode, k => { S.lscMode = k; updateLinesPanel(); }, "#scSeg");
-    const v = LV.v;
-    let pts;
-    if (S.lscMode === "cor") {
-      sub.innerHTML = `Cada ponto é um troço de cerca de 1 km (tempo programado do TP contra o carro entre as mesmas paragens). <b>Área = viagens por hora</b> (quem mais usa tende a ser servido por mais viagens). Arraste para selecionar troços no mapa.`;
-      const inSel = es ? new Set(es.map(e => D.eCi[e])) : null;
-      pts = [];
+    const sub = $("#scSub"), sel = S.sel, lm = S.lscMode, v = LV.v;
+    seg([["route", "Linhas"], ["cor", "Troços"]], lm, k => { S.lscMode = k; updateLinesPanel(); }, "#scSeg");
+    const cl = x => D.CLS_COLORS[D.cls(x)];
+    const cfg = { xlab: "Razão TP / carro", rmin: 2, rmax: 13, vmax: 12, empty: "Sem observações para esta seleção, hora e filtros." };
+    const rTip = (r, x) => `<b>${esc(D.routes[r].n)}</b><br>${esc(D.feedNames[D.routes[r].f])}<br>${x}`;
+    let pts = [];
+    const pickRoutes = (ids, add) => { const c = new Set(add && sel && sel.kind === "routes" ? sel.routes : []); ids.forEach(i => c.add(i)); S.sel = c.size ? { kind: "routes", routes: c } : null; if (rect) { map.removeLayer(rect); rect = null; } update({ map: true }); };
+    if (lm === "route" && sel && sel.kind === "routes") {
+      sub.innerHTML = `Cada ponto é uma <b>hora de partida</b> da(s) linha(s) selecionada(s): como a linha se comporta ao longo do dia (aqui a hora dos filtros não se aplica). <b>Área = viagens por hora</b>. Arraste para ficar só com algumas linhas.`;
+      for (const r of sel.routes) for (let s = 0; s < 6; s++) {
+        const a = D.slotAgg(D.entByRoute[r], s, S.scen); if (!a.n) continue;
+        pts.push({ id: r * 8 + s, x: a.ratio, y: a.diff, v: a.trips, c: cl(a.ratio), lab: D.SLOT_LABELS[s], tip: rTip(r, `${D.SLOT_LABELS[s]}: razão ${num(a.ratio, 2)} · dif. ${num(a.diff, 0)} min · ${num(a.trips, 1)} viag./h`) });
+      }
+      Object.assign(cfg, { ylab: "Diferença acumulada na linha (min)", labels: true, onSelect: ids => { const rs = new Set(ids.map(i => Math.floor(i / 8))); if (rs.size) { S.sel = { kind: "routes", routes: rs }; update({ map: true }); } } });
+    } else if (lm === "route" && sel) {
+      sub.innerHTML = `Cada ponto é uma linha, medida só nos troços <b>dentro da área selecionada</b> (hora dos filtros). <b>Área = viagens por hora</b>.`;
+      for (const [r, o] of groupByRoute(selEntries(), v)) pts.push({ id: r, x: o.a / o.b, y: o.d, v: o.tk / o.km, c: cl(o.a / o.b), tip: rTip(r, `Na área: razão ${num(o.a / o.b, 2)} · dif. ${num(o.d, 0)} min · ${num(o.tk / o.km, 1)} viag./h`) });
+      cfg.ylab = "Diferença acumulada nos troços da área (min)";
+    } else if (lm === "route") {
+      sub.innerHTML = `Cada ponto é uma linha (um sentido). Eixo vertical: diferença de tempo acumulada ao longo do percurso (min). <b>Área = viagens por hora</b>. Arraste para selecionar linhas.`;
+      for (const [r, o] of groupByRoute(allEntries(), v)) {
+        if (o.km < 1.5) continue;
+        const ratio = o.a / o.b; if (S.hidden.has(D.cls(ratio))) continue;
+        pts.push({ id: r, x: ratio, y: o.d, v: o.tk / o.km, c: cl(ratio), tip: rTip(r, `Razão ${num(ratio, 2)} · dif. ${num(o.d, 0)} min · ${num(o.tk / o.km, 1)} viag./h`) });
+      }
+      Object.assign(cfg, { ylab: "Diferença acumulada na linha (min)", onSelect: pickRoutes });
+    } else if (sel && sel.kind === "routes") {
+      sub.innerHTML = `Cada ponto é um <b>troço da(s) linha(s) selecionada(s)</b> (cerca de 1 km, hora dos filtros), medido só para essa linha. <b>Área = viagens por hora</b>.`;
+      for (const e of selEntries()) { const r = v.tp[e] / v.car[e]; pts.push({ id: e, x: r, y: (v.tp[e] - v.car[e]) / 60, v: v.t[e], c: cl(r), tip: rTip(D.eRi[e], `Troço de ${num(D.eKmKm[e], 1)} km: razão ${num(r, 2)} · dif. ${num((v.tp[e] - v.car[e]) / 60, 1)} min · ${num(v.t[e], 0)} viag./h`) }); }
+      cfg.ylab = "Diferença TP - carro no troço (min)";
+    } else if (sel) {
+      sub.innerHTML = `Cada ponto é um <b>troço dentro da área selecionada</b> (todas as linhas somadas, hora dos filtros). <b>Área = viagens por hora</b>.`;
+      for (const c of sel.cors) if (LV.cE[c]) pts.push({ id: c, x: LV.cR[c], y: LV.cD[c], v: LV.cT[c], c: cl(LV.cR[c]), tip: `<b>Razão ${num(LV.cR[c])}</b> · dif. ${num(LV.cD[c])} min<br>${num(LV.cT[c], 0)} viag./h` });
+      cfg.ylab = "Diferença TP - carro no troço (min)";
+    } else {
+      sub.innerHTML = `Cada ponto é um troço de cerca de 1 km (tempo programado do TP contra o carro entre as mesmas paragens). <b>Área = viagens por hora</b>. Arraste para selecionar troços no mapa.`;
       for (let c = 0; c < D.C; c++) {
         if (!LV.cE[c] || S.hidden.has(D.cls(LV.cR[c]))) continue;
-        pts.push({ id: c, x: LV.cR[c], y: LV.cD[c], v: LV.cT[c], c: D.CLS_COLORS[D.cls(LV.cR[c])], sel: inSel ? inSel.has(c) : false, tip: `<b>Razão ${num(LV.cR[c])}</b> · dif. ${num(LV.cD[c])} min<br>${num(LV.cT[c], 0)} viagens/h<br>${esc(D.routes[routesAt(c)[0]].n)}${routesAt(c).length > 1 ? ` (+${routesAt(c).length - 1})` : ""}` });
+        pts.push({ id: c, x: LV.cR[c], y: LV.cD[c], v: LV.cT[c], c: cl(LV.cR[c]), tip: `<b>Razão ${num(LV.cR[c])}</b> · dif. ${num(LV.cD[c])} min<br>${num(LV.cT[c], 0)} viag./h<br>${esc(D.routes[routesAt(c)[0]].n)}${routesAt(c).length > 1 ? ` (+${routesAt(c).length - 1})` : ""}` });
       }
-    } else {
-      sub.innerHTML = `Cada ponto é uma linha (um sentido). Eixo vertical: diferença de tempo acumulada ao longo do percurso (min). <b>Área = viagens por hora</b>. Arraste para selecionar linhas.`;
-      const g = new Map();
-      for (const e of all) {
-        const r = D.eRi[e]; let o = g.get(r); if (!o) { o = { a: 0, b: 0, t: 0, tk: 0, km: 0, d: 0 }; g.set(r, o); }
-        const w = v.t[e]; o.a += w * v.tp[e]; o.b += w * v.car[e]; o.t += w; o.tk += w * D.eKmKm[e]; o.km += D.eKmKm[e]; o.d += (v.tp[e] - v.car[e]) / 60;
-      }
-      pts = [];
-      for (const [r, o] of g) {
-        if (o.km < 1.5) continue;
-        const ratio = o.a / o.b;
-        if (S.hidden.has(D.cls(ratio))) continue;
-        pts.push({ id: r, x: ratio, y: o.d, v: o.tk / o.km, c: D.CLS_COLORS[D.cls(ratio)], sel: S.sel && S.sel.kind === "routes" ? S.sel.routes.has(r) : false, tip: `<b>${esc(D.routes[r].n)}</b><br>${esc(D.feedNames[D.routes[r].f])}<br>Razão ${num(ratio, 2)} · dif. ${num(o.d, 0)} min · ${num(o.tk / o.km, 1)} viagens/h` });
-      }
+      Object.assign(cfg, { ylab: "Diferença TP - carro no troço (min)", onSelect: (ids, add) => { const c = new Set(add && S.sel && S.sel.kind === "area" ? S.sel.cors : []); ids.forEach(i => c.add(i)); S.sel = c.size ? { kind: "area", cors: c } : null; if (rect) { map.removeLayer(rect); rect = null; } update({ map: true }); } });
     }
-    const lm = S.lscMode;
-    scat.set(pts, {
-      xlab: "Razão TP / carro", ylab: lm === "cor" ? "Diferença TP - carro no troço (min)" : "Diferença acumulada na linha (min)", rmin: 2, rmax: 13, vmax: 12,
-      onSelect: (ids, add) => {
-        if (lm === "cor") { const c = new Set(add && S.sel && S.sel.kind === "area" ? S.sel.cors : []); ids.forEach(i => c.add(i)); S.sel = c.size ? { kind: "area", cors: c } : null; }
-        else { const c = new Set(add && S.sel && S.sel.kind === "routes" ? S.sel.routes : []); ids.forEach(i => c.add(i)); S.sel = c.size ? { kind: "routes", routes: c } : null; }
-        if (rect) { map.removeLayer(rect); rect = null; }
-        update({ map: true });
-      },
-    });
+    scat.set(pts, cfg);
     $("#sizeLeg").innerHTML = sizeLegend("Tamanho = viagens/h", [1, 4, 12], scat, v => num(v, 0));
     $("#barSub").textContent = "Parte dos quilómetros-viagem em cada classe de razão (ponderada pela frequência).";
     C.bars($("#barEl"), A.shares, es ? Rf.shares : null);
@@ -489,7 +558,7 @@
     ch(slot, () => { S.slot = slot.value === "all" ? "all" : +slot.value; update({ recompute: true }); });
     ch(scen, () => { S.scen = +scen.value; update({ recompute: true }); });
     ch(pen, () => { S.pen = +pen.value; $("#fPenV").textContent = S.pen + " min"; update({ recompute: true }); }, "input");
-    ch(role, () => { S.role = role.value; S.scMode = "main"; update({ recompute: true }); });
+    ch(role, () => { S.role = role.value; S.zsc = null; update({ recompute: true }); });
     ch(metric, () => { S.metric = metric.value; S.hidden.clear(); update({ map: true }); });
     ch(mun, () => {
       S.mun = mun.value; S.selZ = new Set([...S.selZ].filter(passZ)); update({ map: true });
@@ -511,7 +580,7 @@
     }));
     $("#clearBtn").onclick = () => { S.selZ.clear(); S.hiZ.clear(); S.sel = null; if (rect) { map.removeLayer(rect); rect = null; } update({ map: true }); };
     $("#resetBtn").onclick = () => {
-      Object.assign(S, { slot: 1, scen: 0, pen: 0, role: "from", metric: "ratio", mun: "", popMin: 0, scMode: "main", lscMode: "cor", minTrips: 0, sel: null });
+      Object.assign(S, { slot: 1, scen: 0, pen: 0, role: "from", metric: "ratio", mun: "", popMin: 0, zsc: null, lscMode: "route", minTrips: 0, sel: null });
       S.selZ.clear(); S.hiZ.clear(); S.hidden.clear(); S.feeds = new Set([0, 1, 2, 3]);
       slot.value = "1"; scen.value = "0"; pen.value = "0"; $("#fPenV").textContent = "0 min"; role.value = "from"; metric.value = "ratio"; mun.value = ""; pop.value = "0"; freq.value = "0"; $("#fFreqV").textContent = "0 viagens/h"; line.value = "";
       document.querySelectorAll("#fOps input").forEach(c => (c.checked = true));

@@ -43,6 +43,10 @@ ambiente `.venv` do projeto).
   dispersão. O gráfico mostra uma zona por ponto, com a área proporcional à população.
 - **Linhas**: cor por razão do troço, espessura por viagens/hora. Clique num troço para selecionar
   as linhas que o servem, use **Área**, arraste no gráfico, ou procure a linha pelo nome.
+- **Gráfico de dispersão** (razão no eixo horizontal, diferença de tempo no vertical, área = população ou viagens/h):
+  sem seleção mostra uma zona (modo Zonas) ou uma linha (modo Linhas) por ponto. Com seleção mostra as
+  observações da seleção: numa zona, uma linha por ponto (as que a servem, medidas nos troços dentro da zona),
+  ou os destinos/origens; numa linha, uma hora de partida por ponto (modo Linhas) ou um troço por ponto (modo Troços).
 - Filtros: hora, velocidade do carro (média, congestionado, fluido), acesso e estacionamento do
   carro (minutos somados ao carro), perspetiva (sai ou chega), concelho, população mínima,
   operadores e frequência mínima.

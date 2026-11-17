@@ -89,6 +89,14 @@
         g.globalAlpha = 1;
         g.lineWidth = q.sel ? 2 : 1; g.strokeStyle = q.sel ? ink : surface; g.stroke();
       }
+      if (this.cfg.labels && this.pts.length <= 24) {
+        g.font = "600 10px system-ui, sans-serif"; g.fillStyle = ink; g.textAlign = "left"; g.textBaseline = "middle";
+        for (const p of this.pos) { const q = this.pts[p.i]; if (q.lab) g.fillText(q.lab, p.x + p.r + 3, p.y); }
+      }
+      if (!this.pts.length) {
+        g.font = "12px system-ui, sans-serif"; g.fillStyle = ink2; g.textAlign = "center"; g.textBaseline = "middle";
+        g.fillText(this.cfg.empty || "Sem observações.", this.m.l + this.pw / 2, this.m.t + this.ph / 2);
+      }
       if (this.brush) {
         const b = this.brush, x = Math.min(b.x0, b.x1), y = Math.min(b.y0, b.y1), ww = Math.abs(b.x1 - b.x0), hh = Math.abs(b.y1 - b.y0);
         g.fillStyle = css("--accent"); g.globalAlpha = 0.12; g.fillRect(x, y, ww, hh); g.globalAlpha = 1;
@@ -105,7 +113,7 @@
       }
       return best;
     }
-    down(e) { const [x, y] = this.xy(e); if (this.inPlot(x, y)) this.brush = { x0: x, y0: y, x1: x, y1: y, shift: e.shiftKey || e.ctrlKey || e.metaKey }; }
+    down(e) { if (!this.cfg || !this.cfg.onSelect) return; const [x, y] = this.xy(e); if (this.inPlot(x, y)) this.brush = { x0: x, y0: y, x1: x, y1: y, shift: e.shiftKey || e.ctrlKey || e.metaKey }; }
     move(e) {
       const [x, y] = this.xy(e);
       if (this.brush) { this.brush.x1 = Math.max(this.m.l, Math.min(x, this.m.l + this.pw)); this.brush.y1 = Math.max(this.m.t, Math.min(y, this.m.t + this.ph)); this.tip.hidden = true; this.draw(); return; }

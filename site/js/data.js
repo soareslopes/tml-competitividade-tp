@@ -197,6 +197,16 @@
     }
     return { t, tp, car };
   }
+  // observacao de um conjunto de troços numa hora (0..5): razao agregada, diferenca acumulada (min), viagens/h por km
+  function slotAgg(entries, slot, scen) {
+    const cA = carArr[scen];
+    let a = 0, b = 0, tk = 0, km = 0, d = 0, n = 0;
+    for (const e of entries) {
+      const k = slot * E + e, w = tr[k];
+      if (w > 0) { a += w * tpA[k]; b += w * cA[k]; tk += w * eKmKm[e]; km += eKmKm[e]; d += (tpA[k] - cA[k]) / 60; n++; }
+    }
+    return { ratio: b ? a / b : NaN, diff: d, trips: km ? tk / km : NaN, km, n };
+  }
   function lineProfile(entries, scen, mask) {
     const cA = carArr[scen], out = [];
     for (let s = 0; s < 6; s++) {
@@ -214,7 +224,7 @@
   window.TMLD = {
     SLOT_LABELS, CLS_EDGES, CLS_COLORS, CLS_LABELS, SEQ_BLUE, cls,
     Z, NS, zones, W, zoneMetrics, pooled, pickSlots, otherEnd,
-    E, C, routes, eCi, eRi, eKmKm, entByCor, entByRoute, corByRoute, corBounds, tr, entryVals, lineProfile,
+    E, C, routes, eCi, eRi, eKmKm, entByCor, entByRoute, corByRoute, corBounds, tr, entryVals, lineProfile, slotAgg,
     corGeom: L.cor, feedNames: L.feed_names, feedKeys: L.feeds,
   };
 })();
