@@ -13,7 +13,7 @@ python3 -m http.server 8000
 ```
 
 Também funciona abrindo `index.html` diretamente (os dados são ficheiros `.js`, não `fetch`),
-mas o mapa de base OpenStreetMap só carrega com internet.
+mas o mapa de base só carrega com internet.
 
 ## Publicar no GitHub Pages
 
@@ -31,7 +31,7 @@ O ficheiro `.nojekyll` já está incluído. O tamanho total ronda 12 MB (cerca d
 | `data/zones.js`, `muns.js` | 383 zonas e concelhos (WGS84, simplificados) |
 | `data/od.js` | matriz origem-destino 383x383 por hora (carro, cenários, TP), em binário base64 |
 | `data/lines.js` | troços de linha (geometria e tempos por hora) |
-| `lib/` | Leaflet 1.9.4 |
+| `lib/` | Leaflet 1.9.4, MapLibre GL 4.7.1 e a ponte Leaflet-MapLibre (mapas de base vetoriais) |
 
 Os dados são gerados por `code/50_export_site.py` a partir de `data/processed/` (correr com o
 ambiente `.venv` do projeto).
@@ -56,5 +56,7 @@ ambiente `.venv` do projeto).
 
 Prova de conceito com TomTom de janeiro de 2020, GTFS de 2024 e OSM de 2026. Sem CP, TCB, fluvial,
 Metro Sul e Mobi Cascais. Ver o botão "Como ler" na página.
-Mapa de base: OpenStreetMap (uso moderado conforme a política de tiles; para tráfego elevado
-trocar por um fornecedor com chave).
+Mapas de base (seletor no canto do mapa, a escolha fica guardada no navegador): **Limpo** (Positron, sem cores),
+**Colorido** (Bright, poucas cores) e **Carregado** (Liberty, mais detalhe e rótulos). São estilos vetoriais gratuitos e sem chave
+do OpenFreeMap (OpenMapTiles, dados do OpenStreetMap). O deslizador "Zonas" ajusta a opacidade do preenchimento para ver o mapa
+por baixo. Se o WebGL não estiver disponível, o mapa recorre ao OpenStreetMap raster.

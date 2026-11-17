@@ -6,6 +6,7 @@
 <title>Competitividade do TP face ao carro</title>
 <meta name="description" content="Prova de conceito: razão e diferença de tempo entre transporte público e carro na Área Metropolitana de Lisboa, por zona e por linha.">
 <link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="lib/maplibre-gl.css">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -72,6 +73,14 @@
       <button data-tool="box" title="Arraste um retângulo para selecionar uma área">Área</button>
       <button id="clearBtn" title="Limpar a seleção">Limpar</button>
     </div>
+    <label class="basepick">Mapa de base
+      <select id="fBase" aria-label="Mapa de base">
+        <option value="clean">Limpo (sem cores)</option>
+        <option value="color">Colorido (poucas cores)</option>
+        <option value="full">Carregado (OpenMapTiles)</option>
+      </select>
+      <span class="zop" title="Opacidade do preenchimento das zonas">Zonas <input id="fZop" type="range" min="15" max="100" step="5" value="85"></span>
+    </label>
     <div class="legend" id="legend"></div>
     <div class="busy" id="busy" hidden>A calcular...</div>
   </div>
@@ -84,6 +93,8 @@
 </dialog>
 
 <script src="lib/leaflet.js"></script>
+<script src="lib/maplibre-gl.js"></script>
+<script src="lib/leaflet-maplibre-gl.js"></script>
 <script src="data/zones.js"></script>
 <script src="data/muns.js"></script>
 <script src="data/od.js"></script>

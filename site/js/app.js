@@ -15,7 +15,7 @@
 
   const S = {
     mode: "zones", slot: 1, scen: 0, pen: 0, role: "from", metric: "ratio", mun: "", popMin: 0, hidden: new Set(),
-    selZ: new Set(), hiZ: new Set(), zsc: null, tool: "click",
+    zop: 0.85, selZ: new Set(), hiZ: new Set(), zsc: null, tool: "click",
     feeds: new Set([0, 1, 2, 3]), minTrips: 0, sel: null, lscMode: "route", sortKey: null, sortDir: -1,
   };
   const slotsList = () => (S.slot === "all" ? [0, 1, 2, 3, 4, 5] : [S.slot]);
@@ -25,9 +25,28 @@
   const zones = D.zones, Z = D.Z;
   const dark = matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light";
   const map = L.map("map", { zoomControl: true, zoomAnimation: false, minZoom: 8, maxZoom: 15, zoomSnap: 0.5, attributionControl: true });
-  // mapa de base OSM, dessaturado por CSS (classe .basemap) para nao competir com as cores dos dados
+  // mapas de base: tres estilos vetoriais gratuitos do OpenFreeMap (OpenMapTiles + OpenStreetMap), via MapLibre GL.
+  // Se o WebGL falhar, recorre ao OSM raster dessaturado.
+  const OFM = "https://tiles.openfreemap.org/styles/";
+  const BASES = { clean: OFM + "positron", color: OFM + "bright", full: OFM + "liberty" };
+  const ATTR = "&copy; <a href='https://openfreemap.org'>OpenFreeMap</a> &copy; <a href='https://openmaptiles.org/'>OpenMapTiles</a> dados de <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>";
   map.createPane("muns"); map.getPane("muns").style.zIndex = 430; map.getPane("muns").style.pointerEvents = "none";
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 15, className: "basemap", attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors" }).addTo(map);
+  let baseLayer = null, baseKey = null;
+  function setBase(k) {
+    if (!BASES[k]) k = "clean";
+    if (baseLayer) { map.removeLayer(baseLayer); baseLayer = null; }
+    try {
+      baseLayer = L.maplibreGL({ style: BASES[k], attributionControl: false }).addTo(map);
+      baseLayer.getMaplibreMap().on("error", e => { if (e && e.error && /style|WebGL/i.test(String(e.error.message))) fallbackBase(); });
+    } catch (err) { fallbackBase(); }
+    baseKey = k;
+    map.attributionControl.removeAttribution(ATTR); map.attributionControl.addAttribution(ATTR);
+    try { localStorage.setItem("tml-base", k); } catch (e) { /* sem armazenamento */ }
+  }
+  function fallbackBase() {
+    if (baseLayer) map.removeLayer(baseLayer);
+    baseLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 15, className: "basemap", attribution: "&copy; OpenStreetMap" }).addTo(map);
+  }
 
   const zl = [];
   const zoneLayer = L.geoJSON(T.zones, {
@@ -41,6 +60,12 @@
   const munLayer = L.geoJSON(T.muns, { pane: "muns", interactive: false, style: { fill: false, color: css("--ink2"), weight: 1, opacity: 0.55 } }).addTo(map);
   map.fitBounds(zoneLayer.getBounds(), { padding: [10, 10] });
   const homeBounds = zoneLayer.getBounds();
+  let savedBase = "clean";
+  try { savedBase = localStorage.getItem("tml-base") || "clean"; } catch (e) { /* sem armazenamento */ }
+  setBase(savedBase);
+  $("#fBase").value = BASES[savedBase] ? savedBase : "clean";
+  $("#fBase").addEventListener("change", e => setBase(e.target.value));
+  $("#fZop").addEventListener("input", e => { S.zop = +e.target.value / 100; if (S.mode === "zones" && typeof ZM !== "undefined" && ZM) zl.forEach((l, i) => l.setStyle(zoneStyle(i))); });
 
   // ---- camada de linhas em canvas proprio (ordem de desenho e larguras controladas)
   const LinesLayer = L.Layer.extend({
@@ -117,7 +142,7 @@
   function zoneStyle(i) {
     const m = S.metric, k = METRICS[m].cls(i), ok = passZ(i), sel = S.selZ.has(i), hi = S.hiZ.has(i), any = S.selZ.size > 0;
     return {
-      fillColor: colorOf(m, k), fillOpacity: !ok ? 0.06 : any && !sel ? 0.45 : 0.85,
+      fillColor: colorOf(m, k), fillOpacity: !ok ? 0.06 : any && !sel ? S.zop * 0.53 : S.zop,
       color: sel ? css("--ink") : hi ? css("--accent") : css("--surface"), weight: sel ? 2.6 : hi ? 2.4 : 0.5, opacity: ok ? 1 : 0.3, dashArray: hi && !sel ? "4 3" : null,
     };
   }

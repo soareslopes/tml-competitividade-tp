@@ -44,6 +44,10 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 470px; 
 .tools { position: absolute; top: 80px; left: 10px; z-index: 800; display: flex; flex-direction: column; gap: 4px; }
 .tools button { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; box-shadow: var(--shadow); text-align: left; }
 .tools button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.basepick { position: absolute; top: 10px; right: 10px; z-index: 800; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink2); background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px 4px 9px; box-shadow: var(--shadow); }
+.basepick .zop { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
+.basepick input[type=range] { width: 72px; accent-color: var(--accent); }
+.basepick select { height: 26px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 0 4px; }
 .legend { position: absolute; left: 10px; bottom: 18px; z-index: 800; background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; box-shadow: var(--shadow); max-width: 250px; }
 .legend h4 { margin: 0 0 5px; font-size: 11.5px; }
 .legend .it { display: flex; align-items: center; gap: 7px; padding: 2px 0; cursor: pointer; user-select: none; font-size: 12px; }
@@ -85,7 +89,9 @@ tr.row:hover td { background: var(--grid); }
 .note { color: var(--muted); font-size: 11px; margin-top: 10px; }
 .leaflet-container { font: inherit; background: var(--panel); }
 .basemap { filter: grayscale(1) brightness(1.08) contrast(.82); opacity: .75; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .basemap { filter: grayscale(1) invert(1) brightness(.75) contrast(.85); opacity: .6; } }
+.leaflet-gl-layer { z-index: 1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .leaflet-gl-layer { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9); } :root:not([data-theme="light"]) .basemap { filter: grayscale(1) invert(1) brightness(.75) contrast(.85); opacity: .6; } }
+:root[data-theme="dark"] .leaflet-gl-layer { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9); }
 :root[data-theme="dark"] .basemap { filter: grayscale(1) invert(1) brightness(.75) contrast(.85); opacity: .6; }
 .leaflet-tooltip { background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 12px; }
 .leaflet-tooltip b { font-weight: 700; }
