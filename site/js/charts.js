@@ -20,6 +20,21 @@
       this.tip = document.createElement("div"); this.tip.className = "tip"; this.tip.hidden = true;
       el.append(this.cv, this.tip);
       this.m = { l: 44, r: 10, t: 8, b: 34 };
+      this.tool = "select"; this.view = null; this.key = null;
+      const bar = document.createElement("div"); bar.className = "sctools";
+      bar.innerHTML = '<button data-t="select" class="on" title="Selecionar: arraste um retângulo (shift soma)">Selecionar</button><button data-t="zoom" title="Zoom: arraste um retângulo para ampliar">Zoom</button><button data-t="pan" title="Mover: arraste para deslocar o gráfico">Mover</button><button data-t="reset" title="Repor a escala (duplo clique também repõe)">Repor</button>';
+      el.parentNode.insertBefore(bar, el.nextSibling); this.bar = bar;  // abaixo do gráfico
+      bar.addEventListener("click", e => {
+        const t = e.target.dataset && e.target.dataset.t; if (!t) return;
+        if (t === "reset") {  // repõe zoom, deslocamento e ferramenta, e limpa a seleção
+          this.view = null; this.pan = null; this.brush = null; this.tool = "select";
+          bar.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.t === "select")); this.cursor();
+          this.layout(); this.draw(); if (this.onReset) this.onReset(); return;
+        }
+        this.tool = t; bar.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.t === t)); this.cursor();
+      });
+      this.cv.addEventListener("wheel", e => this.wheel(e), { passive: false });
+      this.cv.addEventListener("dblclick", () => { this.view = null; this.layout(); this.draw(); });
       const ev = (n, f) => this.cv.addEventListener(n, f);
       ev("mousedown", e => this.down(e));
       ev("mousemove", e => this.move(e));
@@ -27,7 +42,8 @@
       ev("mouseleave", () => { this.tip.hidden = true; });
       new ResizeObserver(() => this.draw()).observe(el);
     }
-    set(pts, cfg) { this.pts = pts; this.cfg = cfg; this.layout(); this.draw(); }
+    set(pts, cfg) { this.pts = pts; this.cfg = cfg; if (cfg.key !== this.key) { this.view = null; this.key = cfg.key; } this.layout(); this.draw(); }
+    cursor() { this.cv.style.cursor = this.tool === "pan" ? "grab" : this.tool === "zoom" ? "zoom-in" : "crosshair"; }
     layout() {
       const p = this.pts, c = this.cfg;
       let xmax = 4, ymin = 0, ymax = 10, vmax = 1;
@@ -36,6 +52,8 @@
       const pad = (ymax - ymin) * 0.06;
       this.yd = [ymin < 0 ? ymin - pad : 0, ymax + pad];
       if (c.ydom) this.yd = c.ydom;
+      this.xd0 = this.xd.slice(); this.yd0 = this.yd.slice();
+      if (this.view) { this.xd = this.view.xd.slice(); this.yd = this.view.yd.slice(); }
       this.vmax = c.vmax || vmax;
     }
     rad(v) { const o = this.cfg; return o.rmin + (o.rmax - o.rmin) * Math.sqrt(Math.max(0, v) / this.vmax); }
@@ -82,7 +100,9 @@
       const order = this.pts.map((q, i) => i).sort((a, b) => this.pts[b].v - this.pts[a].v);
       this.pos = [];
       for (const i of order) {
-        const q = this.pts[i], x = this.sx(q.x), y = this.sy(q.y), r = this.rad(q.v);
+        const q = this.pts[i];
+        if (this.view && (q.x < this.xd[0] || q.x > this.xd[1] || q.y < this.yd[0] || q.y > this.yd[1])) continue;
+        const x = this.sx(q.x), y = this.sy(q.y), r = this.rad(q.v);
         this.pos.push({ i, x, y, r });
         g.globalAlpha = anySel && !q.sel ? 0.22 : 0.78;
         g.fillStyle = q.c; g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
@@ -113,9 +133,35 @@
       }
       return best;
     }
-    down(e) { if (!this.cfg || !this.cfg.onSelect) return; const [x, y] = this.xy(e); if (this.inPlot(x, y)) this.brush = { x0: x, y0: y, x1: x, y1: y, shift: e.shiftKey || e.ctrlKey || e.metaKey }; }
+    dx(px) { return this.xd[0] + ((px - this.m.l) / this.pw) * (this.xd[1] - this.xd[0]); }
+    dy(py) { return this.yd[1] - ((py - this.m.t) / this.ph) * (this.yd[1] - this.yd[0]); }
+    setView(xd, yd) {
+      const x0 = this.xd0, y0 = this.yd0;
+      if (xd[1] - xd[0] >= x0[1] - x0[0] - 1e-9 && yd[1] - yd[0] >= y0[1] - y0[0] - 1e-9) this.view = null;
+      else this.view = { xd, yd };
+      this.layout(); this.draw();
+    }
+    wheel(e) {
+      const [x, y] = this.xy(e); if (!this.pos || !this.inPlot(x, y)) return;
+      e.preventDefault();
+      const f = e.deltaY < 0 ? 0.8 : 1.25, cx = this.dx(x), cy = this.dy(y);
+      const nx = [cx - (cx - this.xd[0]) * f, cx + (this.xd[1] - cx) * f], ny = [cy - (cy - this.yd[0]) * f, cy + (this.yd[1] - cy) * f];
+      if (nx[1] - nx[0] < 0.05 || ny[1] - ny[0] < 0.5) return;
+      this.setView(nx, ny);
+    }
+    down(e) {
+      if (!this.cfg) return; const [x, y] = this.xy(e);
+      if (!this.inPlot(x, y)) return;
+      if (this.tool === "pan") { this.pan = { x0: x, y0: y, xd: this.xd.slice(), yd: this.yd.slice() }; this.cv.style.cursor = "grabbing"; return; }
+      if (this.tool === "select" && !this.cfg.onSelect) return;
+      this.brush = { x0: x, y0: y, x1: x, y1: y, shift: e.shiftKey || e.ctrlKey || e.metaKey, kind: this.tool };
+    }
     move(e) {
       const [x, y] = this.xy(e);
+      if (this.pan) {
+        const p = this.pan, sx = ((x - p.x0) / this.pw) * (p.xd[1] - p.xd[0]), sy = ((y - p.y0) / this.ph) * (p.yd[1] - p.yd[0]);
+        this.view = { xd: [p.xd[0] - sx, p.xd[1] - sx], yd: [p.yd[0] + sy, p.yd[1] + sy] }; this.tip.hidden = true; this.layout(); this.draw(); return;
+      }
       if (this.brush) { this.brush.x1 = Math.max(this.m.l, Math.min(x, this.m.l + this.pw)); this.brush.y1 = Math.max(this.m.t, Math.min(y, this.m.t + this.ph)); this.tip.hidden = true; this.draw(); return; }
       const n = this.pos && this.nearest(x, y);
       if (n) {
@@ -123,12 +169,18 @@
         const w = this.el.clientWidth;
         this.tip.style.left = Math.min(w - 190, Math.max(0, n.x + 10)) + "px"; this.tip.style.top = Math.max(0, n.y - 8 - this.tip.offsetHeight) + "px";
         this.cv.style.cursor = "pointer";
-      } else { this.tip.hidden = true; this.cv.style.cursor = "crosshair"; }
+      } else { this.tip.hidden = true; this.cursor(); }
     }
     up(e) {
+      if (this.pan) { this.pan = null; this.cursor(); return; }
       const b = this.brush;
       if (!b) return;
       this.brush = null;
+      if (b.kind === "zoom") {
+        if (Math.abs(b.x1 - b.x0) < 6 || Math.abs(b.y1 - b.y0) < 6) { this.draw(); return; }
+        const xa = this.dx(Math.min(b.x0, b.x1)), xb = this.dx(Math.max(b.x0, b.x1)), yb = this.dy(Math.min(b.y0, b.y1)), ya = this.dy(Math.max(b.y0, b.y1));
+        this.setView([xa, xb], [ya, yb]); return;
+      }
       const add = b.shift || e.shiftKey || e.ctrlKey || e.metaKey;
       let ids;
       if (Math.abs(b.x1 - b.x0) < 4 && Math.abs(b.y1 - b.y0) < 4) {
@@ -151,7 +203,7 @@
     const ink = css("--ink"), ink2 = css("--ink2"), surface = css("--surface");
     const mx = Math.max(0.05, ...sel, ...(ref || []));
     const scale = bw / Math.min(1, mx * 1.08);
-    let s = `<svg width="${w}" height="${h}" role="img" aria-label="${opts.aria || "Distribuição por classe de razão"}">`;
+    let s = `<svg width="${w}" height="${h}" role="img" aria-label="${opts.aria || "Distribuição por classe de rácio"}">`;
     for (let k = 0; k < 6; k++) {
       const y = k * rowH + 3, v = sel[k] || 0, bwid = Math.max(v > 0 ? 2 : 0, v * scale);
       s += `<text x="${lw - 8}" y="${y + 12}" text-anchor="end" font-size="11" fill="${ink2}">${D.CLS_LABELS[k]}</text>`;
@@ -175,7 +227,7 @@
     const pad = Math.max(0.15, (hi - lo) * 0.2);
     lo = Math.max(0, lo - pad); hi = hi + pad;
     const Y = v => m.t + (1 - (v - lo) / (hi - lo)) * (h - m.t - m.b);
-    let s = `<svg width="${w}" height="${h}" role="img" aria-label="Perfil horário da razão">`;
+    let s = `<svg width="${w}" height="${h}" role="img" aria-label="Perfil horário do rácio">`;
     for (const v of niceTicks(lo, hi, 4)) s += `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${grid}"/><text x="${m.l - 5}" y="${Y(v) + 3}" text-anchor="end" font-size="10" fill="${ink2}">${fmt(v)}</text>`;
     s += `<rect x="${X(2) + 6}" y="${m.t}" width="${X(3) - X(2) - 12}" height="${h - m.t - m.b}" fill="${grid}" opacity=".35"/>`;
     for (let i = 0; i < 6; i++) s += `<text x="${X(i)}" y="${h - 8}" text-anchor="middle" font-size="10" fill="${ink2}">${D.SLOT_LABELS[i]}</text>`;

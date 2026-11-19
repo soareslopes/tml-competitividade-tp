@@ -3,7 +3,8 @@
   const T = window.TML;
   const SLOT_LABELS = ["7h", "8h", "9h", "17h", "18h", "19h"];
   const CLS_EDGES = [1, 1.5, 2, 3, 4];
-  const CLS_COLORS = ["#256abf", "#86b6ef", "#ecd9b8", "#f0a58b", "#d9483b", "#8f1d1d"];
+  // paleta original (azul, bege, salmão, vermelhos) com o azul claro (1 a 1,5) trocado por verde claro
+  const CLS_COLORS = ["#256abf", "#6fc48a", "#ecd9b8", "#f0a58b", "#d9483b", "#8f1d1d"];
   const CLS_LABELS = ["< 1", "1 a 1.5", "1.5 a 2", "2 a 3", "3 a 4", "> 4"];
   const SEQ_BLUE = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
 
@@ -27,6 +28,9 @@
   const OD = T.od.data.map(s => ({ car: dec(s.car, Uint16Array), tp: dec(s.tp, Uint16Array), fc: dec(s.fc, Uint8Array), ff: dec(s.ff, Uint8Array) }));
   const NS = OD.length;
 
+  // tempo maximo de TP (minutos) para um par contar como alcancavel; 65535 = sem TP dentro do horizonte simulado
+  let TPMAX = 450;
+  function setLimit(min) { TPMAX = min * 10; }
   const NB = 6000;
   const hR = new Float64Array(NB), hD = new Float64Array(NB);
   const R_MAX = 60, D_LO = -100, D_HI = 300;
@@ -68,7 +72,7 @@
           const w = W[o];
           wTot += w;
           const t = s.tp[ix];
-          if (t === 65535) continue;
+          if (t > TPMAX) continue;
           const tm = t / 10;
           wReach += w;
           hR[bR(tm / c)] += w;
@@ -109,7 +113,7 @@
           const w = wf * W[o];
           wTot += w;
           const t = s.tp[ix];
-          if (t === 65535) continue;
+          if (t > TPMAX) continue;
           const tm = t / 10, r = tm / c;
           wReach += w;
           hR[bR(r)] += w;
@@ -147,7 +151,7 @@
           if (c < 0) continue;
           wa += W[f];
           const t = s.tp[ix];
-          if (t === 65535) continue;
+          if (t > TPMAX) continue;
           a += W[f] * c; b += W[f] * (t / 10); wb += W[f];
         }
         if (wa > 0) { sw += wa; swr += wb; if (wb > 0) { sc += a / wb; st += b / wb; n++; } }
@@ -223,7 +227,7 @@
 
   window.TMLD = {
     SLOT_LABELS, CLS_EDGES, CLS_COLORS, CLS_LABELS, SEQ_BLUE, cls,
-    Z, NS, zones, W, zoneMetrics, pooled, pickSlots, otherEnd,
+    Z, NS, zones, W, setLimit, zoneMetrics, pooled, pickSlots, otherEnd,
     E, C, routes, eCi, eRi, eKmKm, entByCor, entByRoute, corByRoute, corBounds, tr, entryVals, lineProfile, slotAgg,
     corGeom: L.cor, feedNames: L.feed_names, feedKeys: L.feeds,
   };
