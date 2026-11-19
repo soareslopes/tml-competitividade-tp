@@ -12,9 +12,9 @@
   const FEED_COL = ["#2a78d6", "#eb6834", "#1baf7a", "#8e5ad6"];
 
   const S = {
-    mode: "zones", slot: 1, scen: 1, pen: 6, role: "from", metric: "ratio", mun: "", popMin: 0, hidden: new Set(),
+    mode: "zones", slot: 1, scen: 0, pen: 6, role: "from", metric: "ratio", mun: "", popMin: 0, hidden: new Set(),
     zop: 0.85, lim: 45, selZ: new Set(), hiZ: new Set(), zsc: null, tool: "click",
-    feeds: new Set([0, 1, 2, 3]), minTrips: 0, sel: null, lscMode: "route", sortKey: null, sortDir: -1,
+    feeds: new Set([0, 1, 2, 3]), minTrips: 0, sel: null, lcolor: "cor", lscMode: "route", sortKey: null, sortDir: -1,
   };
   const slotsList = () => (S.slot === "all" ? [0, 1, 2, 3, 4, 5] : [S.slot]);
   const slotIdx = () => (S.slot === "all" ? -1 : S.slot);
@@ -97,10 +97,14 @@
       const path = a => { g.beginPath(); g.moveTo(a[0], a[1]); for (let k = 2; k < a.length; k += 2) g.lineTo(a[k], a[k + 1]); };
       if (st.hiAny) {
         g.strokeStyle = css("--ink"); g.globalAlpha = 0.9;
-        for (const i of st.order) if (st.hi[i]) { g.lineWidth = st.wid[i] * zf + 3.5; path(P[i]); g.stroke(); }
+        for (const i of st.order) if (st.hi[i]) { g.lineWidth = st.wid[i] * zf + 3.5; path(P[st.cor ? st.cor[i] : i]); g.stroke(); }
       }
       for (const i of st.order) {
-        g.globalAlpha = st.alpha[i]; g.strokeStyle = st.col[i]; g.lineWidth = st.wid[i] * zf; path(P[i]); g.stroke();
+        g.globalAlpha = st.alpha[i]; g.strokeStyle = st.col[i]; g.lineWidth = st.wid[i] * zf; path(P[st.cor ? st.cor[i] : i]); g.stroke();
+      }
+      if (this.extra && this.extra.size) {
+        g.globalAlpha = 1;
+        for (const [col, lw] of [["#ffffff", 8], ["#d4009b", 4.5]]) for (const c of this.extra) { const a = P[c]; if (!a) continue; g.strokeStyle = col; g.lineWidth = lw; path(a); g.stroke(); }
       }
       g.globalAlpha = 1; this._zf = zf;
     },
@@ -109,7 +113,7 @@
       const st = this.st, x = cp.x + this._size.x * this._pad, y = cp.y + this._size.y * this._pad;
       let best = -1, bd = 1e9;
       for (const i of st.order) {
-        const a = this._P[i], tol = Math.max(5, (st.wid[i] * (this._zf || 1)) / 2 + 3);
+        const a = this._P[st.cor ? st.cor[i] : i], tol = Math.max(5, (st.wid[i] * (this._zf || 1)) / 2 + 3);
         for (let k = 0; k < a.length - 2; k += 2) {
           const ax = a[k], ay = a[k + 1], bx = a[k + 2], by = a[k + 3];
           if ((x < Math.min(ax, bx) - tol) || (x > Math.max(ax, bx) + tol) || (y < Math.min(ay, by) - tol) || (y > Math.max(ay, by) + tol)) continue;
@@ -126,12 +130,23 @@
 
   // ================================================================== zonas: metricas, classes, estilo
   let ZM = null, REF = {}, ZP = null;
-  const DIFF_E = [40, 55, 70, 85, 100, 115];
+  // classes da diferença proporcionais ao tempo máximo de TP (10%, 20%, 30%, 40%, 50% e 65% do limite), em minutos inteiros
+  const DIFF_F = [0.1, 0.2, 0.3, 0.4, 0.5, 0.65];
+  function diffEdges() {
+    const e = [];
+    for (const f of DIFF_F) { let x = Math.round(f * S.lim); if (e.length && x <= e[e.length - 1]) x = e[e.length - 1] + 1; e.push(x); }
+    return e;
+  }
+  function diffLabels() {
+    const e = diffEdges(), L = [`< ${e[0]}`];
+    for (let k = 0; k < e.length - 1; k++) L.push(`${e[k]} a ${e[k + 1]}`);
+    L.push(`> ${e[e.length - 1]}`); return L;
+  }
   let REACH_E = [0.05, 0.1, 0.2, 0.35, 0.5];  // recalculado por quantis em recomputeZones
   const bin = (v, e) => { let k = 0; while (k < e.length && v >= e[k]) k++; return k; };
   const METRICS = {
     ratio: { title: "Rácio TP / carro", items: D.CLS_LABELS.map((l, k) => ({ k, l, c: D.CLS_COLORS[k] })).concat([ND, NP]), val: i => ZM.ratio[i], cls: i => { const r = ZM.ratio[i]; return zones[i].pop < 100 ? "np" : r === r ? D.cls(r) : "nd"; } },
-    diff: { title: "Diferença TP - carro (min)", items: ["< 40", "40 a 55", "55 a 70", "70 a 85", "85 a 100", "100 a 115", "> 115"].map((l, k) => ({ k, l, c: D.SEQ_BLUE[k] })).concat([ND, NP]), val: i => ZM.diff[i], cls: i => { const r = ZM.diff[i]; return zones[i].pop < 100 ? "np" : r === r ? bin(r, DIFF_E) : "nd"; } },
+    diff: { title: "Diferença TP - carro (min)", get items() { return diffLabels().map((l, k) => ({ k, l: l + " min", c: D.SEQ_BLUE[k] })).concat([ND, NP]); }, val: i => ZM.diff[i], cls: i => { const r = ZM.diff[i]; return zones[i].pop < 100 ? "np" : r === r ? bin(r, diffEdges()) : "nd"; } },
     reach: { get title() { return `População alcançável por TP em ${S.lim} min`; }, get items() { return reachLabels().map((l, k) => ({ k, l, c: D.SEQ_BLUE[k + 1] })).concat([NP]); }, val: i => ZM.reach[i], cls: i => (zones[i].pop < 100 ? "np" : bin(ZM.reach[i], REACH_E)) },
   };
   // matriz de prioridade: gravidade (rácio mediano da zona; sem TP no limite conta como alta) x exposição (população da zona)
@@ -236,7 +251,22 @@
     }
     return { ratio: b ? a / b : NaN, diff: t ? (a - b) / t / 60 : NaN, trips: km ? tk / km : NaN, km, cors: cs.size, shares: sh.map(x => (shT ? x / shT : 0)) };
   }
+  function styleLinesRoute() {
+    const es = allEntries(), g = groupByRoute(es, LV.v), sel = S.sel, n = es.length;
+    const cor = new Int32Array(n), ent = new Int32Array(n), wid = new Float32Array(n), alpha = new Float32Array(n), hi = new Uint8Array(n), kk = new Uint8Array(n), col = new Array(n), order = [];
+    let m = 0;
+    for (const e of es) {
+      const r = D.eRi[e], o = g.get(r), k = D.cls(o.a / o.b); if (S.hidden.has(k)) continue;
+      cor[m] = D.eCi[e]; ent[m] = e; col[m] = D.CLS_COLORS[k]; kk[m] = k; wid[m] = 1.0 + 0.75 * Math.sqrt(Math.min(o.tk / o.km, 12));
+      hi[m] = sel ? ((sel.kind === "routes" ? sel.routes.has(r) : sel.cors.has(D.eCi[e])) ? 1 : 0) : 0;
+      alpha[m] = sel ? (hi[m] ? 1 : 0.16) : 0.95; order.push(m); m++;
+    }
+    order.sort((a, b) => (hi[a] - hi[b]) || (kk[a] - kk[b]));
+    linesLayer.st = { cor, ent, col, wid, alpha, hi, hiAny: !!sel, order, rg: g };
+    linesLayer.redraw();
+  }
   function styleLines() {
+    if (S.lcolor === "route") return styleLinesRoute();
     const Cn = D.C, col = new Array(Cn), wid = new Float32Array(Cn), alpha = new Float32Array(Cn), hi = new Uint8Array(Cn), order = [];
     const es = selEntries(); let hiAny = false;
     if (es) { for (const e of es) hi[D.eCi[e]] = 1; hiAny = true; }
@@ -253,8 +283,8 @@
   function groupByRoute(es, v) {
     const g = new Map();
     for (const e of es) {
-      const r = D.eRi[e]; let o = g.get(r); if (!o) { o = { a: 0, b: 0, tk: 0, km: 0, d: 0, t: 0 }; g.set(r, o); }
-      const w = v.t[e]; o.a += w * v.tp[e]; o.b += w * v.car[e]; o.t += w; o.tk += w * D.eKmKm[e]; o.km += D.eKmKm[e]; o.d += (v.tp[e] - v.car[e]) / 60;
+      const r = D.eRi[e]; let o = g.get(r); if (!o) { o = { a: 0, b: 0, tk: 0, km: 0, d: 0, t: 0, n: 0 }; g.set(r, o); }
+      const w = v.t[e]; o.a += v.tp[e]; o.b += v.car[e]; o.n++; o.t += w; o.tk += w * D.eKmKm[e]; o.km += D.eKmKm[e]; o.d += (v.tp[e] - v.car[e]) / 60;
     }
     return g;
   }
@@ -298,6 +328,30 @@
     }
     return out;
   }
+  // ligação mapa <-> gráfico de dispersão (modo Linhas/Carreiras)
+  function corsOfPoint(id) {
+    const k = S.scKind;
+    if (k === "cor-univ" || k === "cor-area") return [id];
+    if (k === "cor-routes") return [D.eCi[id]];
+    return D.corByRoute[k === "route-hourly" ? Math.floor(id / 8) : id] || [];
+  }
+  function applyMapHi() {
+    const cs = S.hoverCors || S.pinCors || null;
+    linesLayer.extra = cs && cs.length ? new Set(cs) : null; linesLayer.redraw();
+  }
+  function clearPin() { S.pinCors = null; S.hoverCors = null; if (linesLayer.extra) applyMapHi(); }
+  function fitCors(cs) {
+    const b = L.latLngBounds([]);
+    for (const c of cs) { const bb = D.corBounds[c]; b.extend([bb[1], bb[0]]); b.extend([bb[3], bb[2]]); }
+    if (b.isValid()) map.fitBounds(b.pad(0.6), { maxZoom: 15 });
+  }
+  function scatterPredForMap(cor, r) {
+    const k = S.scKind;
+    if (k === "cor-univ" || k === "cor-area") return id => id === cor;
+    if (k === "cor-routes") return id => D.eCi[id] === cor;
+    const rs = new Set(r != null ? [r] : routesAt(cor));
+    return k === "route-hourly" ? id => rs.has(Math.floor(id / 8)) : id => rs.has(id);
+  }
   function routesAt(c) { return [...new Set(D.entByCor[c].filter(e => LV.mask[e]).map(e => D.eRi[e]))]; }
   const rLabel = r => `${D.feedNames[D.routes[r].f]} · ${D.routes[r].n}`;
 
@@ -308,7 +362,14 @@
     raf = requestAnimationFrame(() => {
       raf = 0;
       const c = linesLayer.hit(e.containerPoint);
-      if (c < 0) { if (ltOn) { map.closeTooltip(lt); ltOn = false; } map.getContainer().style.cursor = ""; return; }
+      if (c < 0) { if (ltOn) { map.closeTooltip(lt); ltOn = false; } map.getContainer().style.cursor = ""; if (scat) scat.setHighlight(null); return; }
+      if (scat && S.scKind) { const st0 = linesLayer.st, rt = S.lcolor === "route"; scat.setHighlight(scatterPredForMap(rt ? st0.cor[c] : c, rt ? D.eRi[st0.ent[c]] : null)); }
+      if (S.lcolor === "route") {
+        const st = linesLayer.st, r = D.eRi[st.ent[c]], o = st.rg.get(r), ratio = o.a / o.b;
+        lt.setLatLng(e.latlng).setContent(`<b>${esc(D.routes[r].n)}</b><br>${esc(D.feedNames[D.routes[r].f])}<br>Linha/carreira inteira (um sentido): TP ${num(o.a / 60, 0)} min · carro ${num(o.b / 60, 0)} min<br>Rácio <b>${num(ratio, 2)}</b> · diferença ${num(o.d, 0)} min<br>${num(o.tk / o.km, 1)} viagens/h · ${o.n} troços`);
+        if (!ltOn) { lt.addTo(map); ltOn = true; }
+        map.getContainer().style.cursor = "pointer"; return;
+      }
       const rs = routesAt(c), first = rs.slice(0, 4).map(r => `${esc(D.routes[r].n)}`).join("<br>");
       lt.setLatLng(e.latlng).setContent(`<b>Rácio ${num(LV.cR[c])}</b> · diferença ${num(LV.cD[c])} min<br>${num(LV.cT[c], 0)} viagens/h (todas as linhas/carreiras do troço)<br><span style="color:var(--muted)">${rs.length} linha(s)/carreira(s):</span><br>${first}${rs.length > 4 ? "<br>..." : ""}`);
       if (!ltOn) { lt.addTo(map); ltOn = true; }
@@ -323,8 +384,8 @@
     if (S.mode !== "lines" || S.tool !== "click") return;
     const c = linesLayer.hit(e.containerPoint), add = e.originalEvent.shiftKey || e.originalEvent.ctrlKey || e.originalEvent.metaKey;
     if (rect && !add) { map.removeLayer(rect); rect = null; }
-    if (c < 0) { if (!add) { S.sel = null; update({ map: true }); } return; }
-    const rs = routesAt(c), prev = S.sel && S.sel.kind === "routes" && add ? S.sel.routes : new Set();
+    if (c < 0) { if (!add) { clearPin(); S.sel = null; update({ map: true }); } return; }
+    const rs = S.lcolor === "route" ? [D.eRi[linesLayer.st.ent[c]]] : routesAt(c), prev = S.sel && S.sel.kind === "routes" && add ? S.sel.routes : new Set();
     S.sel = { kind: "routes", routes: new Set([...prev, ...rs]) };
     update({ map: true });
   });
@@ -368,7 +429,7 @@
     const lg = $("#legend");
     let items, title;
     if (S.mode === "zones") { const M = METRICS[S.metric]; title = M.title; items = M.items; }
-    else { title = "Rácio TP / carro do troço"; items = D.CLS_LABELS.map((l, k) => ({ k, l, c: D.CLS_COLORS[k] })); }
+    else { title = S.lcolor === "route" ? "Rácio TP / carro da linha/carreira (percurso inteiro)" : "Rácio TP / carro do troço"; items = D.CLS_LABELS.map((l, k) => ({ k, l, c: D.CLS_COLORS[k] })); }
     lg.classList.toggle("wide", S.mode === "zones" && S.metric === "mx");
     if (S.mode === "zones" && S.metric === "mx") {
       // matriz gravidade x exposição no lugar da legenda (contagens com os filtros de concelho e população mínima)
@@ -393,10 +454,16 @@
       });
       return;
     } else lg.innerHTML = `<h4>${title}</h4>` + items.map(it => `<div class="it ${S.hidden.has(it.k) ? "off" : ""}" data-k="${it.k}"><i style="background:${it.c}"></i>${it.l}</div>`).join("") +
-      (S.mode === "lines" ? `<div class="hint">Espessura: viagens por hora no troço (1 a 12).</div>` : "") + `<div class="hint">Clique numa classe para a ocultar.</div>`;
+      (S.mode === "zones" && S.metric === "diff" ? `<div class="hint">Classes proporcionais ao tempo máximo de TP (${S.lim} min): 10%, 20%, 30%, 40%, 50% e 65% do limite.</div>` : "") + (S.mode === "lines" ? `<div class="hint">Espessura: viagens por hora ${S.lcolor === "route" ? "da linha/carreira" : "no troço"}.</div>` : "") + `<div class="hint">Clique numa classe para a isolar; clique de novo para mostrar todas.</div>`;
+    const allKeys = items.map(it => it.k);
     lg.querySelectorAll(".it").forEach(el => el.onclick = () => {
       const k = isNaN(+el.dataset.k) ? el.dataset.k : +el.dataset.k;
-      S.hidden.has(k) ? S.hidden.delete(k) : S.hidden.add(k);
+      if (S.hidden.has(k)) S.hidden.delete(k);                       // classe escondida: restaura-a
+      else {
+        const visible = allKeys.filter(x => !S.hidden.has(x));
+        if (visible.length === 1 && visible[0] === k) S.hidden.clear();  // era a única visível: restaura todas
+        else { S.hidden.clear(); allKeys.forEach(x => { if (x !== k) S.hidden.add(x); }); }  // isola a classe
+      }
       update({ map: true });
     });
   }
@@ -466,7 +533,7 @@
       pts = lineRows.map(o => ({ id: o.r, x: o.ratio, y: o.diff, v: o.trips, c: D.CLS_COLORS[D.cls(o.ratio)], tip: `<b>${esc(D.routes[o.r].n)}</b><br>${esc(D.feedNames[D.routes[o.r].f])}<br>Na zona: rácio ${num(o.ratio, 2)} · dif. ${num(o.diff, 0)} min · ${num(o.trips, 1)} viag./h<br>Linha/Carreira inteira: rácio ${num(o.whole, 2)}` }));
       Object.assign(cfg, { ylab: "Diferença acumulada nos troços da zona (min)", rmin: 3, rmax: 14, vmax: 12, empty: "Nenhuma linha/carreira com serviço nesta zona, hora e filtros." });
     }
-    cfg.key = "z-" + mode; scat.set(pts, cfg);
+    S.scKind = null; cfg.key = "z-" + mode; scat.set(pts, cfg);
     $("#sizeLeg").innerHTML = mode === "lines" ? sizeLegend("Tamanho = viagens/h", [1, 4, 12], scat, v => num(v, 0)) : sizeLegend("Tamanho = população", [2000, 10000, 40000], scat, v => int(v));
     // barras
     $("#barSub").textContent = "Parte das viagens alcançáveis em cada classe (ponderada por população de origem e destino).";
@@ -544,6 +611,9 @@
       }
       Object.assign(cfg, { ylab: "Diferença TP - carro no troço (min)", onSelect: (ids, add) => { const c = new Set(add && S.sel && S.sel.kind === "area" ? S.sel.cors : []); ids.forEach(i => c.add(i)); S.sel = c.size ? { kind: "area", cors: c } : null; if (rect) { map.removeLayer(rect); rect = null; } update({ map: true }); } });
     }
+    S.scKind = lm === "route" ? (sel ? (sel.kind === "routes" ? "route-hourly" : "route-area") : "route-univ") : (sel ? (sel.kind === "routes" ? "cor-routes" : "cor-area") : "cor-univ");
+    cfg.onHover = id => { S.hoverCors = id == null ? null : corsOfPoint(id); applyMapHi(); };
+    cfg.onPick = id => { S.pinCors = corsOfPoint(id); S.hoverCors = null; applyMapHi(); if (S.pinCors.length) fitCors(S.pinCors); };
     cfg.key = "l-" + lm + "-" + (sel ? sel.kind : "all"); scat.set(pts, cfg);
     $("#sizeLeg").innerHTML = sizeLegend("Tamanho = viagens/h", [1, 4, 12], scat, v => num(v, 0));
     $("#barSub").textContent = "Parte dos quilómetros-viagem em cada classe de rácio (ponderada pela frequência).";
@@ -616,11 +686,12 @@
   }
 
   function setMode(m) {
-    S.mode = m; try { history.replaceState(null, "", "#" + (m === "zones" ? "zonas" : "linhas")); } catch (e) { /* sem historico */ }
+    clearPin(); S.mode = m; try { history.replaceState(null, "", "#" + (m === "zones" ? "zonas" : "linhas")); } catch (e) { /* sem historico */ }
     S.hidden.clear(); S.sortKey = null; S.hiZ.clear();
     document.querySelectorAll(".tabs button").forEach(b => { b.classList.toggle("on", b.dataset.mode === m); b.setAttribute("aria-selected", b.dataset.mode === m); });
     document.querySelector(".zonesOnly").hidden = m !== "zones";
     document.querySelector(".linesOnly").hidden = m !== "lines";
+    $("#colorPick").hidden = m !== "lines";
     if (rect) { map.removeLayer(rect); rect = null; }
     if (m === "zones") { map.removeLayer(linesLayer); if (!map.hasLayer(zoneLayer)) zoneLayer.addTo(map); munLayer.bringToFront && 0; map.getContainer().style.cursor = ""; if (ltOn) { map.closeTooltip(lt); ltOn = false; } }
     else { map.removeLayer(zoneLayer); linesLayer.addTo(map); if (!LV) computeLines(); }
@@ -639,6 +710,8 @@
     ch(slot, () => { S.slot = slot.value === "all" ? "all" : +slot.value; update({ recompute: true }); });
     ch(scen, () => { S.scen = +scen.value; update({ recompute: true }); });
     ch(pen, () => { S.pen = +pen.value; $("#fPenV").textContent = S.pen + " min"; update({ recompute: true }); }, "input");
+    const setColor = v => { S.lcolor = v; document.querySelectorAll("#colorPick button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); };
+    document.querySelectorAll("#colorPick button").forEach(b => b.addEventListener("click", () => { setColor(b.dataset.v); update({ map: true }); }));
     ch($("#fLim"), () => { S.lim = +$("#fLim").value; update({ recompute: true }); });
     ch(role, () => { S.role = role.value; S.zsc = null; update({ recompute: true }); });
     ch(metric, () => { S.metric = metric.value; S.hidden.clear(); update({ map: true }); });
@@ -662,9 +735,9 @@
     }));
     $("#clearBtn").onclick = () => { clearSel(); map.fitBounds(homeBounds, { padding: [10, 10] }); };
     $("#resetBtn").onclick = () => {
-      Object.assign(S, { lim: 45, slot: 1, scen: 1, pen: 6, role: "from", metric: "ratio", mun: "", popMin: 0, zsc: null, lscMode: "route", minTrips: 0, sel: null });
+      Object.assign(S, { lcolor: "cor", lim: 45, slot: 1, scen: 0, pen: 6, role: "from", metric: "ratio", mun: "", popMin: 0, zsc: null, lscMode: "route", minTrips: 0, sel: null });
       S.selZ.clear(); S.hiZ.clear(); S.hidden.clear(); S.feeds = new Set([0, 1, 2, 3]);
-      slot.value = "1"; $("#fLim").value = "45"; scen.value = "1"; pen.value = "6"; $("#fPenV").textContent = "6 min"; role.value = "from"; metric.value = "ratio"; mun.value = ""; pop.value = "0"; freq.value = "0"; $("#fFreqV").textContent = "0 viagens/h"; line.value = "";
+      slot.value = "1"; setColor("cor"); $("#fLim").value = "45"; scen.value = "0"; pen.value = "6"; $("#fPenV").textContent = "6 min"; role.value = "from"; metric.value = "ratio"; mun.value = ""; pop.value = "0"; freq.value = "0"; $("#fFreqV").textContent = "0 viagens/h"; line.value = "";
       document.querySelectorAll("#fOps input").forEach(c => (c.checked = true));
       if (rect) { map.removeLayer(rect); rect = null; }
       map.fitBounds(homeBounds, { padding: [10, 10] }); update({ recompute: true });
@@ -693,6 +766,8 @@
     <ul>
       <li>Cada linha/carreira é dividida em troços de cerca de 1 km. Compara-se o tempo programado do TP entre duas paragens com o tempo de carro pelo caminho mais curto entre as mesmas paragens. Troços com desvio ou encaixe duvidoso no grafo são excluídos (cerca de 9%).</li>
       <li>Cor = classe de rácio: <b>azul</b> (abaixo de 1, o TP é mais rápido que o carro), <b>verde claro</b> (1 a 1,5), bege, salmão e vermelhos (cada vez pior). Espessura = viagens por hora.</li>
+      <li><b>Cor do mapa</b>: "Por troço" (cada troço de cerca de 1 km) ou "Por linha/carreira (percurso inteiro)": cada linha/carreira, um sentido, com uma só cor pelo rácio da soma dos seus tempos de TP sobre a soma dos tempos de carro. O balão mostra o tempo total de TP, o de carro, o rácio e a diferença da linha inteira.</li>
+      <li><b>Mapa e gráfico ligados</b>: passar o rato num ponto do gráfico destaca (a magenta) o troço ou a linha/carreira no mapa; clicar no ponto fixa o destaque e aproxima o mapa. Ao contrário, passar o rato numa linha ou troço do mapa marca o(s) ponto(s) correspondente(s) no gráfico.</li>
       <li>Clique num troço para selecionar as linhas/carreiras que o servem; use <b>Área</b> para selecionar todos os troços numa zona do mapa; ou procure uma linha/carreira pelo nome.</li>
     </ul>
     <h3>Fontes</h3>
@@ -709,7 +784,7 @@
       <li>Os tempos de TP são os programados: não incluem atrasos nem variação em tempo real.</li>
     </ul>`;
 
-  function clearSel() { S.selZ.clear(); S.hiZ.clear(); S.sel = null; if (rect) { map.removeLayer(rect); rect = null; } update({ map: true }); }
+  function clearSel() { clearPin(); S.selZ.clear(); S.hiZ.clear(); S.sel = null; if (rect) { map.removeLayer(rect); rect = null; } update({ map: true }); }
 
   // ================================================================== arranque
   bind();

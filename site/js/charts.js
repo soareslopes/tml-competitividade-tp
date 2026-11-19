@@ -39,10 +39,11 @@
       ev("mousedown", e => this.down(e));
       ev("mousemove", e => this.move(e));
       window.addEventListener("mouseup", e => this.up(e));
-      ev("mouseleave", () => { this.tip.hidden = true; });
+      ev("mouseleave", () => { this.tip.hidden = true; if (this.hoverId != null) { this.hoverId = null; this.cfg && this.cfg.onHover && this.cfg.onHover(null); } });
       new ResizeObserver(() => this.draw()).observe(el);
     }
     set(pts, cfg) { this.pts = pts; this.cfg = cfg; if (cfg.key !== this.key) { this.view = null; this.key = cfg.key; } this.layout(); this.draw(); }
+    setHighlight(pred) { if (!pred && !this.hl) return; this.hl = pred || null; this.draw(); }
     cursor() { this.cv.style.cursor = this.tool === "pan" ? "grab" : this.tool === "zoom" ? "zoom-in" : "crosshair"; }
     layout() {
       const p = this.pts, c = this.cfg;
@@ -109,6 +110,13 @@
         g.globalAlpha = 1;
         g.lineWidth = q.sel ? 2 : 1; g.strokeStyle = q.sel ? ink : surface; g.stroke();
       }
+      if (this.hl) {
+        for (const p of this.pos) {
+          if (!this.hl(this.pts[p.i].id)) continue;
+          g.lineWidth = 5; g.strokeStyle = "#ffffff"; g.beginPath(); g.arc(p.x, p.y, p.r + 2, 0, 6.2832); g.stroke();
+          g.lineWidth = 2.5; g.strokeStyle = "#d4009b"; g.beginPath(); g.arc(p.x, p.y, p.r + 2, 0, 6.2832); g.stroke();
+        }
+      }
       if (this.cfg.labels && this.pts.length <= 24) {
         g.font = "600 10px system-ui, sans-serif"; g.fillStyle = ink; g.textAlign = "left"; g.textBaseline = "middle";
         for (const p of this.pos) { const q = this.pts[p.i]; if (q.lab) g.fillText(q.lab, p.x + p.r + 3, p.y); }
@@ -153,7 +161,7 @@
       if (!this.cfg) return; const [x, y] = this.xy(e);
       if (!this.inPlot(x, y)) return;
       if (this.tool === "pan") { this.pan = { x0: x, y0: y, xd: this.xd.slice(), yd: this.yd.slice() }; this.cv.style.cursor = "grabbing"; return; }
-      if (this.tool === "select" && !this.cfg.onSelect) return;
+      if (this.tool === "select" && !this.cfg.onSelect) { this.sclick = { x, y }; return; }
       this.brush = { x0: x, y0: y, x1: x, y1: y, shift: e.shiftKey || e.ctrlKey || e.metaKey, kind: this.tool };
     }
     move(e) {
@@ -163,7 +171,8 @@
         this.view = { xd: [p.xd[0] - sx, p.xd[1] - sx], yd: [p.yd[0] + sy, p.yd[1] + sy] }; this.tip.hidden = true; this.layout(); this.draw(); return;
       }
       if (this.brush) { this.brush.x1 = Math.max(this.m.l, Math.min(x, this.m.l + this.pw)); this.brush.y1 = Math.max(this.m.t, Math.min(y, this.m.t + this.ph)); this.tip.hidden = true; this.draw(); return; }
-      const n = this.pos && this.nearest(x, y);
+      const n = this.pos && this.nearest(x, y), hid = n ? this.pts[n.i].id : null;
+      if (this.cfg && this.cfg.onHover && hid !== (this.hoverId == null ? null : this.hoverId)) { this.hoverId = hid; this.cfg.onHover(hid); }
       if (n) {
         this.tip.hidden = false; this.tip.innerHTML = this.pts[n.i].tip;
         const w = this.el.clientWidth;
@@ -172,6 +181,10 @@
       } else { this.tip.hidden = true; this.cursor(); }
     }
     up(e) {
+      if (this.sclick) {
+        const s = this.sclick; this.sclick = null;
+        const n = this.nearest(s.x, s.y); if (n && this.cfg.onPick) this.cfg.onPick(this.pts[n.i].id); return;
+      }
       if (this.pan) { this.pan = null; this.cursor(); return; }
       const b = this.brush;
       if (!b) return;
@@ -186,6 +199,7 @@
       if (Math.abs(b.x1 - b.x0) < 4 && Math.abs(b.y1 - b.y0) < 4) {
         const n = this.nearest(b.x0, b.y0);
         ids = n ? [this.pts[n.i].id] : [];
+        if (n && this.cfg.onPick) this.cfg.onPick(ids[0]);
         if (!n && !add) { this.draw(); this.cfg.onSelect && this.cfg.onSelect([], false); return; }
       } else {
         const x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1), y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);

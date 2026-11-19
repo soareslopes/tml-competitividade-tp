@@ -207,7 +207,7 @@
     let a = 0, b = 0, tk = 0, km = 0, d = 0, n = 0;
     for (const e of entries) {
       const k = slot * E + e, w = tr[k];
-      if (w > 0) { a += w * tpA[k]; b += w * cA[k]; tk += w * eKmKm[e]; km += eKmKm[e]; d += (tpA[k] - cA[k]) / 60; n++; }
+      if (w > 0) { a += tpA[k]; b += cA[k]; tk += w * eKmKm[e]; km += eKmKm[e]; d += (tpA[k] - cA[k]) / 60; n++; }  // rácio da linha = soma dos tempos de TP / soma dos tempos de carro
     }
     return { ratio: b ? a / b : NaN, diff: d, trips: km ? tk / km : NaN, km, n };
   }

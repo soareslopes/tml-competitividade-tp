@@ -29,8 +29,8 @@
   </label>
   <label>Velocidade do carro
     <select id="fScen">
-      <option value="0">Média (TomTom)</option>
-      <option value="1" selected>Congestionado (percentil lento)</option>
+      <option value="0" selected>Média (TomTom)</option>
+      <option value="1">Congestionado (percentil lento)</option>
       <option value="2">Fluido (percentil rápido)</option>
     </select>
   </label>
@@ -71,12 +71,8 @@
 <main>
   <div class="mapwrap">
     <div id="map" aria-label="Mapa"></div>
-    <div class="tools" role="toolbar" aria-label="Ferramentas de seleção">
-      <button data-tool="click" class="on" title="Clique para selecionar. Shift+clique para adicionar">Clicar</button>
-      <button data-tool="box" title="Arraste um retângulo para selecionar uma área">Área</button>
-      <button id="clearBtn" title="Limpar a seleção e mostrar toda a AML (clicar fora das zonas também limpa)">Toda a AML</button>
-    </div>
-    <label class="basepick">Mapa de base
+    <div class="trstack">
+      <label class="basepick">Mapa de base
       <select id="fBase" aria-label="Mapa de base">
         <option value="clean">Limpo (sem cores)</option>
         <option value="color">Colorido (poucas cores)</option>
@@ -84,7 +80,18 @@
       </select>
       <span class="zop" title="Opacidade do preenchimento das zonas">Zonas <input id="fZop" type="range" min="15" max="100" step="5" value="85"></span>
     </label>
-    <div class="legend" id="legend"></div>
+      <div class="tools" role="toolbar" aria-label="Ferramentas de seleção">
+      <button data-tool="click" class="on" title="Clique para selecionar. Shift+clique para adicionar">Clicar</button>
+      <button data-tool="box" title="Arraste um retângulo para selecionar uma área">Área</button>
+      <button id="clearBtn" title="Limpar a seleção e mostrar toda a AML (clicar fora das zonas também limpa)">Toda a AML</button>
+    </div>
+    </div>
+    <div class="blstack">
+      <div class="segmap" id="colorPick" role="group" aria-label="Cor do mapa" hidden>
+        <button data-v="cor" class="on" title="Cada troço de cerca de 1 km">Por troço</button><button data-v="route" title="Cada linha/carreira (um sentido) com uma só cor">Por linha/carreira</button>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
     <div class="busy" id="busy" hidden>A calcular...</div>
   </div>
   <aside id="panel" aria-live="polite"></aside>

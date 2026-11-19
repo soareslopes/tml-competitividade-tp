@@ -41,14 +41,20 @@ button, select, input { font: inherit; color: inherit; }
 main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 470px; }
 .mapwrap { position: relative; min-width: 0; }
 #map { position: absolute; inset: 0; background: var(--panel); }
-.tools { position: absolute; top: 80px; left: 10px; z-index: 800; display: flex; flex-direction: column; gap: 4px; }
-.tools button { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; box-shadow: var(--shadow); text-align: left; }
+.trstack { position: absolute; top: 10px; right: 10px; z-index: 800; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.tools { display: flex; flex-direction: row; gap: 4px; }
+.tools button { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; box-shadow: var(--shadow); text-align: left;  flex: 1; text-align: center; }
 .tools button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
-.basepick { position: absolute; top: 10px; right: 10px; z-index: 800; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink2); background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px 4px 9px; box-shadow: var(--shadow); }
+.basepick { position: static; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink2); background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px 4px 9px; box-shadow: var(--shadow); }
 .basepick .zop { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
 .basepick input[type=range] { width: 72px; accent-color: var(--accent); }
 .basepick select { height: 26px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 0 4px; }
-.legend { position: absolute; left: 10px; bottom: 18px; z-index: 800; background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; box-shadow: var(--shadow); max-width: 250px; }
+.blstack { position: absolute; left: 10px; bottom: 18px; z-index: 800; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.segmap { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+.segmap[hidden] { display: none; }
+.segmap button { flex: 1; border: 0; background: transparent; padding: 6px 8px; font-size: 11.5px; cursor: pointer; color: var(--ink2); }
+.segmap button.on { background: var(--accent); color: #fff; }
+.legend { position: static; background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; box-shadow: var(--shadow); max-width: 250px; }
 .legend h4 { margin: 0 0 5px; font-size: 11.5px; }
 .legend .it { display: flex; align-items: center; gap: 7px; padding: 2px 0; cursor: pointer; user-select: none; font-size: 12px; }
 .legend .it i { width: 18px; height: 11px; border-radius: 2px; border: 1px solid rgba(0,0,0,.15); flex: none; }
@@ -112,7 +118,6 @@ dialog .x { position: sticky; top: 0; float: right; border: 1px solid var(--line
   #panel { border-left: 0; border-top: 1px solid var(--line); }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .top { flex-wrap: wrap; }
-  .tools { top: 76px; }
 }
 
 .mxg { display: grid; grid-template-columns: 78px repeat(3, minmax(0, 1fr)); gap: 5px; font-size: 11.5px; }

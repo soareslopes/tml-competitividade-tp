@@ -41,6 +41,8 @@ ambiente `.venv` do projeto).
 - **Zonas**: cor por rácio, diferença, população alcançável ou grupos de prioridade.
   Clique numa zona (shift para somar), use **Área** para um retângulo, ou arraste no gráfico de
   dispersão. O gráfico mostra uma zona por ponto, com a área proporcional à população.
+- **Mapa e gráfico ligados (Linhas/Carreiras):** passar o rato num ponto do gráfico destaca o troço ou a linha no mapa (clicar fixa o destaque e aproxima); passar o rato no mapa marca o ponto no gráfico.
+- **Cor do mapa (Linhas/Carreiras):** por troço (por defeito) ou por linha/carreira inteira (um sentido), com tempos totais de TP e de carro no balão.
 - **Linhas/Carreiras**: cor por rácio do troço, espessura por viagens/hora. Clique num troço para selecionar
   as linhas/carreiras que o servem, use **Área**, arraste no gráfico, ou procure a linha/carreira pelo nome.
 - **Gráfico de dispersão** (rácio no eixo horizontal, diferença de tempo no vertical, área = população ou viagens/h):
@@ -50,7 +52,7 @@ ambiente `.venv` do projeto).
 - Filtros: hora, velocidade do carro (média, congestionado, fluido), acesso e estacionamento do
   carro (minutos somados ao carro), perspetiva (sai ou chega), concelho, população mínima,
   operadores e frequência mínima.
-- Clicar numa classe da legenda oculta essa classe no mapa e nos gráficos. Clicar fora das zonas (no mar), `Esc` ou o botão
+- Clicar numa classe da legenda isola-a no mapa e nos gráficos; clicar de novo mostra todas; clicar numa classe escondida restaura-a. Clicar fora das zonas (no mar), `Esc` ou o botão
   **Toda a AML** limpa a seleção (o botão também volta à vista geral).
 - **Grupos de prioridade** (opção em "Mapa mostra"; a matriz aparece no lugar da legenda): gravidade pelo rácio (1,5 e 2; sem TP conta como alta) por exposição pela população (5 e 15 mil); clicar numa célula seleciona as suas zonas.
 - **Tempo máximo de TP** (zonas, por defeito 45 min): só contam como alcançáveis os destinos a que o TP chega nesse tempo.
